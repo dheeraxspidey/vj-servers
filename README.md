@@ -21,3 +21,16 @@ Backend  (Workstation2)
 # Demo Examples
 
 
+# One time setup for every user on the server
+
+Login to your user account. 
+Run ssh-keygen to generate ssh-key
+Save the ky in https://github.com/settings/keys 
+
+### Git initialisation 
+
+
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+
+
