@@ -12,7 +12,7 @@ app.use(cors({
 
 mc.connect(process.env.DB_URL)
   .then(client => {
-    const vnr = client.db('VNR');
+    const vnr = client.db('vnr');
     const vnrCollections = vnr.collection('vnrCollections');
 
     app.set('vnrCollections', vnrCollections);
