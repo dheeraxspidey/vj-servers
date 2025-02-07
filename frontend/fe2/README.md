@@ -29,3 +29,6 @@ fe2/
 # How to run the frontend server
 
 source ~/python_fe_env/bin/activate
+
+cd ~/code/vj-servers/frontend/fe2/
+python app.py
