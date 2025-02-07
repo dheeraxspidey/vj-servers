@@ -15,7 +15,7 @@ function SampleForm() {
         let payload = { username, password };
         
         try {
-            const response = await fetch('http://10.45.30.252:5000/user/reg', {
+            const response = await fetch('http://10.45.30.252:5000/user/register', {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json'
