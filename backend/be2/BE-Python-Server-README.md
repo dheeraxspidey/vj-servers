@@ -46,8 +46,19 @@ pip install flask-cors
 source ~/fastapi_env/bin/activate
 ```
 
-### Start the Server
+### Start the Server with SQLite
 ```
 cd ~/code/vj-servers/backend/be2
 python server.py
+```
+
+### Start the Server with MySQL
+```
+cd ~/code/vj-servers/backend/be2
+uvicorn server2:app --host 0.0.0.0 --port 5000
+```
+
+After critical changes to the DB
+```
+sudo systemctl restart mysql
 ```
