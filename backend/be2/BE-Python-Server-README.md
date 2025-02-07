@@ -5,6 +5,10 @@ sudo apt install python3-venv -y
 python3 -m venv fastapi_env
 
 
+### SQLite
+pip install sqlalchemy
+
+
 ### For every backend server
 sudo ufw allow 5000
 
