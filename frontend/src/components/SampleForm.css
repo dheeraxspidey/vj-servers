@@ -1,0 +1,12 @@
+.formCont{
+    margin: auto;
+    padding: 20px;
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+button{
+    width: 100px;
+    margin: auto;
+}
