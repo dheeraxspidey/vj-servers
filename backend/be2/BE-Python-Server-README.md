@@ -9,6 +9,28 @@ python3 -m venv fastapi_env
 pip install sqlalchemy
 
 
+### MySQL
+
+sudo apt install mysql-server -y
+pip install cryptography
+
+sudo systemctl restart mysql
+
+#### Databased changes
+
+mysql -u root -p
+CREATE DATABASE vj_users;
+CREATE USER 'campus_server_user'@'localhost' IDENTIFIED BY 'Campus123#';
+GRANT ALL PRIVILEGES ON vj_users.* TO 'campus_server_user'@'localhost';
+FLUSH PRIVILEGES;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+
 ### For every backend server
 sudo ufw allow 5000
 
