@@ -32,6 +32,5 @@ Run a frontend server that needs SSO
 
 
 ## How to test
-
 curl -H "Authorization: Bearer JWT_TOKEN" http://localhost:5000/auth/profile
 

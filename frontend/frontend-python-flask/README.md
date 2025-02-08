@@ -13,7 +13,6 @@ python app.py
 Run the auth-service from another terminal. 
 
 ## Next steps
-
 Open http://127.0.0.1:3001/
 
 Click on 'Login With Google' link
