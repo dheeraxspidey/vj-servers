@@ -2,3 +2,5 @@ backend/be2/__pycache__
 frontend/fe1/package-lock.json
 backend/auth-service/package-lock.json
 backend/auth-service/.env
+backend/eduprime-auth-service/.env
+backend/eduprime-auth-service/package-lock.json
