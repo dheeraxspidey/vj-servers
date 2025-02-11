@@ -30,7 +30,6 @@ Save the ky in https://github.com/settings/keys
 
 ### Git initialisation 
 
-
   git config --global user.email "you@example.com"
   git config --global user.name "Your Name"
 
@@ -40,3 +39,18 @@ Rebase local commits on latest remote	`git pull --rebase`
 Only update if no conflicts exist	`git pull --ff-only`
 Discard local changes & force sync	`git reset --hard origin/main`
 
+## Debugging
+
+### NGINX
+sudo systemctl status nginx
+sudo systemctl start nginx
+
+sudo journalctl -xe
+sudo tail -f /var/log/nginx/error.log
+
+
+### Tools
+
+#### Start a server instantly. 
+
+python -m http.server 3001

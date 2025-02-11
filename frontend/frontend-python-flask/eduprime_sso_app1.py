@@ -31,6 +31,9 @@ def login():
     if response.status_code == 200:
         data = response.json()
         session['token'] = data.get('token')
+        session['token1'] = data.get('token')
+        session['token2'] = data.get('token')
+        session['token3'] = data.get('token')
         flash("Login successful!", "success")
         return redirect(url_for('dashboard'))
     else:
@@ -61,4 +64,4 @@ def logout():
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=3002)
+    app.run(debug=True, port=3001)
