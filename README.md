@@ -46,6 +46,14 @@ Backend  (Workstation2)
  ## HallBooking App
  Web port : 4000
  
+ ## Minor SSO based Apps
+
+ App1 : 3001  (frotend/frontend-python-flask/eduprime_sso_app1) 
+ App2 : 3002  (frotend/frontend-python-flask/eduprime_sso_app2)
+
+## Super App
+
+Web port: 3003 (frontend/fe1)
 
 # One time setup for every user on the server
 

@@ -32,7 +32,7 @@ echo 'export PATH="$PATH:/opt/flutter/bin"' >> ~/.bashrc
 flutter doctor
 flutter --version
 
-flutter pub add http
+
 
 # How the app was created (need not be done ever)
 flutter create flutter_demo_app
@@ -42,5 +42,7 @@ Git Clone this Repo
 
 # How to Run 
 cd flutter_demo_app
+
+flutter pub add http
 
 flutter run -d chrome --web-browser-flag="--disable-web-security"
