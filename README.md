@@ -19,7 +19,30 @@ Backend  (Workstation2)
     - MySQL
     - SQLite
 
-# Demo Examples
+# Servers
+
+## Google SSO Backend
+
+## EduPrime SSO Backend
+ Port 10.45.30.251:5001
+ Speaks to  https://automation.vnrvjiet.ac.in/eduprime3sandbox/api/Auth/Validate
+ APIs supported
+ - post : /auth/eduprime 
+    Request  {(username, password), (header: APIKey)} 
+    Response {username, eduprimeToken}
+
+## React & Express App
+ Web Port : 3100
+
+ Backend  : 5000
+  post : /register
+
+ Database : mongodb://10.45.30.252:27017
+
+## Flutter Web App 
+ Web port : 44183
+ Speaks to backend: https://automation.vnrvjiet.ac.in/eduprime3sandbox/api/Auth/Validate
+
 
 
 # One time setup for every user on the server
@@ -54,3 +77,9 @@ sudo tail -f /var/log/nginx/error.log
 #### Start a server instantly. 
 
 python -m http.server 3001
+
+
+#### Useful git commands
+git fetch origin
+git pull --rebase origin main
+
