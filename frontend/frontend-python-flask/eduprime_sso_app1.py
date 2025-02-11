@@ -7,9 +7,8 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super_secret_key")  # Change in production
 
 # Configurations
-SSO_SERVER = "http://127.0.0.1:5001"  # Change if hosted elsewhere
-FRONTEND_URL = "http://localhost:3000"
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
+SSO_SERVER = "http://10.45.30.252:5001"  # Change if hosted elsewhere
+# JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
 
 @app.route('/')
 def home():

@@ -5,6 +5,8 @@ This demonstrate usage of SSO enabled frontend application.
 On Home page a Login button is shown. 
 When user tries to login, the SSO token exchange happens using he auth-service. 
 
+pip install requests jwt
+
 # How to start
 ```
 python app.py
