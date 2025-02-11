@@ -2,6 +2,49 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+
+
+## How to run the application
+
+
+```
+npm install
+npm run build
+```
+
+The application will start and takes around 30seconds. 
+
+Meanwhile You may open new terminal to run below command
+
+```
+node server.js
+```
+
+Web application will be available from http://localhost:4000
+
+
+## Users
+**Admin User**
+- Can Create User
+- Can Create Auditorium
+- Can Do Priority Booking (that cancels previous reservation & send email to previously booked people)
+- Can reset the UpperCap limit for users. 
+
+
+**Regular User**
+
+Who is eligible? HODs, Club Managers, Placement incharge
+
+What can they do
+- View Slots
+- Book Slots (on booking they will get circular in PDF format)
+- Add Waiting List Request (gets auto approved when earlier one cancels)
+- Cancel a booking. 
+Constraints
+- Each person can book max 10 per 2 weeks (configurable)
+
+
+
 ## Available Scripts
 
 In the project directory, you can run:
