@@ -43,7 +43,9 @@ Backend  (Workstation2)
  Web port : 44183
  Speaks to backend: https://automation.vnrvjiet.ac.in/eduprime3sandbox/api/Auth/Validate
 
-
+ ## HallBooking App
+ Web port : 4000
+ 
 
 # One time setup for every user on the server
 
