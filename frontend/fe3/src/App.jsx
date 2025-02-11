@@ -4,7 +4,7 @@ import MainPage from './components/MainPage';
 import './App.css';
 import Form from './components/Form';
 import Failure from './components/Failure';
-
+import Success from './components/Success';
 function App() {
   const BrowserRouter = createBrowserRouter([
     {
@@ -18,6 +18,10 @@ function App() {
     {
       path:'/failure',
       element:<Failure/>
+    },
+    {
+      path:'/success',
+      element:<Success/>
     }
   ]);
 

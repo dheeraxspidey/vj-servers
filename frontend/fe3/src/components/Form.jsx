@@ -1,25 +1,64 @@
-import React from 'react';
-import styled from 'styled-components';
-const Form = ({closeForm}) => {
+import React, { useState } from "react";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux"; 
+import { setToken } from "../slices/authSlice";
+
+const Form = ({ closeForm }) => {
+    const navigate = useNavigate();
+    const dispatch = useDispatch(); 
+
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [message, setMessage] = useState("");
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setMessage(""); 
+
+        const payload = { username, password };
+
+        try {
+            const response = await fetch("http://localhost:5001/public/login", {
+                method: "POST",
+                credentials: 'include',
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+            console.log(data);
+            if (response.ok && data.token) {
+                setMessage("Login successful! Redirecting...");
+                dispatch(setToken(data.token)); 
+                window.location.reload();
+              } else {
+                setMessage(data.error || "Authentication failed.");
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+            setMessage("Something went wrong. Please try again.");
+        }
+    };
+
   return (
     <StyledWrapper>
-      
       <div className="form-container">
         <div className="close-cont" onClick={closeForm}>
             <p className='close'>X</p>
         </div>
         <p className="title">Login</p>
-        <form className="form">
+        <form onSubmit={handleSubmit} className="form">
           <div className="input-group">
             <label htmlFor="username">Username</label>
-            <input type="text" name="username" id="username" placeholder />
+            <input type="text" name="username" id="username" placeholder='username' required value={username} onChange={(e)=>setUsername(e.target.value)} />
           </div>
           <div className="input-group">
             <label htmlFor="password">Password</label>
-            <input type="password" name="password" id="password" placeholder />
-            <div className="forgot">
-              <a rel="noopener noreferrer" href="#">Forgot Password ?</a>
-            </div>
+            <input type="password" name="password" id="password" placeholder='password' required value={password} onChange={(e)=>setPassword(e.target.value)} />
+
           </div>
           <button className="sign">Sign in</button>
         </form>
@@ -41,9 +80,7 @@ const Form = ({closeForm}) => {
             </svg>
           </button>
         </div>
-        <p className="signup">Don't have an account?
-          <a rel="noopener noreferrer" href="#" className>Sign up</a>
-        </p>
+
       </div>
     </StyledWrapper>
   );
@@ -147,6 +184,10 @@ const StyledWrapper = styled.div`
     border: none;
     border-radius: 0.375rem;
     font-weight: 600;
+    max-width:90px;
+    margin:auto;
+    margin-top:15px;
+
   }
 
   .social-message {

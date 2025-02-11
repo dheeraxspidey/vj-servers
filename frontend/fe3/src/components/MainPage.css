@@ -393,10 +393,16 @@ main form p{
   right: 14vw;
   top: 10px;
 }
+
 .headline p{
   font-size: 20px;
   color: white;
   font-style: italic;
+}
+.username-no-avatar {
+ position: absolute;
+ right: 1px;
+ top: 2vh;
 }
 .headline img:hover {
   scale: 1.1;

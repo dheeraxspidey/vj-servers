@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import Header from './Header';
 import Card from './Card';
 import OpenCloseButton from '../external/OpenCloseButton';
+
 function MainPage() {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState([]);
@@ -16,19 +17,29 @@ function MainPage() {
   const [appNames, setAppNames] = useState([]);
   const [user, setUser] = useState(null);
   const [iframeSrc, setIframeSrc] = useState('');
-
+  const {token}=useSelector(state=>state.auth);
+console.log(token)
   const { ApplicationsData } = useSelector(state => state.applications);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/user', { credentials: 'include' })
-      .then(response => response.json())
-      .then(data => {
-        if (data.username) {
-          setUser(data);
+    fetch('http://localhost:5001/api/user', {
+        credentials: 'include'  
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Unauthorized');
         }
-      })
-      .catch(err => console.log('Error fetching user data:', err));
-  }, []);
+        return response.json();
+    })
+    .then(data => {
+      console.log(data);
+        if (data.username) {
+            setUser(data);  
+        }
+    })
+    .catch(err => console.log('Error fetching user data:', err));
+}, []);
+
 
   const handleLogout = () => {
     fetch('http://localhost:5001/logout', {
@@ -145,9 +156,12 @@ function MainPage() {
         {user ? (
           <div className="user-info">
             <div className="headline">
-              {user.avatar && <img src={user.avatar} alt="User Avatar" className='profile'/>}
-              <p>{user.name}..!</p>
+              {user.avatar && <img src={user.avatar} alt="User Avatar" className="profile" />}
+              <p className={user.avatar ? 'username-with-avatar' : 'username-no-avatar'}>
+                {user.username}..!
+              </p>
             </div>
+
             <button className="btn-17" onClick={handleLogout}>
               <span className="text-container">
                 <span className="text">Logout</span>
