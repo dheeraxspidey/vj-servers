@@ -52,7 +52,6 @@ app.post("/auth/eduprime", async (req, res) => {
             sameSite: 'Strict',
         });
 
-        // 🎉 Send success response
         return res.status(200).json({ message: "Authentication successful", token: jwtToken });
 
     } catch (error) {
