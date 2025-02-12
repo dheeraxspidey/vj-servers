@@ -2,14 +2,15 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
 
-// ✅ Load environment variables
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());  // To handle cookies
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "defaultsecret";
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3001";
 const EDUPRIME_API_KEY = process.env.EDUPRIME_API_KEY || "1234567890";
 const EDUPRIME_BASE_URL = process.env.EDUPRIME_BASE_URL || "https://automation.vnrvjiet.ac.in/eduprime3sandbox/api/";
@@ -17,7 +18,6 @@ const EDUPRIME_BASE_URL = process.env.EDUPRIME_BASE_URL || "https://automation.v
 console.log("JWT_SECRET:", JWT_SECRET ? "Loaded ✅" : "❌ Missing JWT_SECRET");
 console.log("EDUPRIME_API_KEY:", EDUPRIME_API_KEY ? "Loaded ✅" : "❌ Missing EDUPRIME_API_KEY");
 
-// 🔹 EduPrime Login Route (Frontend calls this for login)
 app.post("/auth/eduprime", async (req, res) => {
     const { username, password } = req.body;
 
@@ -42,14 +42,18 @@ app.post("/auth/eduprime", async (req, res) => {
         // ✅ EduPrime Auth Successful: Extract token
         const eduprimeToken = response.data.Data;
 
-        // 🔹 Generate JWT Token for SSO
-        const userPayload = { username, eduprimeToken };
+        const userPayload = { username: username };
         const jwtToken = jwt.sign(userPayload, JWT_SECRET, { expiresIn: "1h" });
 
-        // 🔹 Redirect to Frontend with JWT
-        // return res.redirect(`${FRONTEND_URL}/callback?token=${jwtToken}`);
-        return res.json({ token: jwtToken });
+        res.cookie('token', jwtToken, {  
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 6 * 60 * 60 * 1000, 
+            sameSite: 'Strict',
+        });
 
+        // 🎉 Send success response
+        return res.status(200).json({ message: "Authentication successful", token: jwtToken });
 
     } catch (error) {
         console.error("EduPrime Auth Failed:", error.response?.data || error.message);

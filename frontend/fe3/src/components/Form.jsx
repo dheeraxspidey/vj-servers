@@ -13,35 +13,62 @@ const Form = ({ closeForm }) => {
     const [message, setMessage] = useState("");
 
     const handleSubmit = async (event) => {
-        event.preventDefault();
-        setMessage(""); 
+      event.preventDefault();
+      setMessage(""); 
+  
+      const payload = { username, password };
+  
+      try {
+          // First API call: Login to get the token
+          const response = await fetch("http://10.45.30.252:5001/auth/eduprime", {
+              method: "POST",
+              credentials: 'include',  // To include cookies if needed
+              headers: {
+                  "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+          });
+  
+          const data = await response.json();
+  
+          if (response.ok && data.token) {
+              setMessage("Login successful! Setting token...");
+              dispatch(setToken(data.token));
+              // Make a POST request to set the token via the server
+            await setTokenOnServer(data.token);
 
-        const payload = { username, password };
+          } else {
+              setMessage(data.error || "Authentication failed.");
+          }
+      } catch (error) {
+          setMessage("Something went wrong. Please try again.");
+      }
+  };
+  const setTokenOnServer = async (token) => {
+    try {
+        const response = await fetch("http://localhost:5001/public/set-api", {
+            method: "POST",
+            credentials: 'include',  // Include cookies if the server sets them
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token }),  // Send token to server
+        });
 
-        try {
-            const response = await fetch("http://localhost:5001/public/login", {
-                method: "POST",
-                credentials: 'include',
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            });
+        const result = await response.json( );
+        dispatch(setToken(result.token));
+        window.location.reload()
 
-            const data = await response.json();
-            console.log(data);
-            if (response.ok && data.token) {
-                setMessage("Login successful! Redirecting...");
-                dispatch(setToken(data.token)); 
-                window.location.reload();
-              } else {
-                setMessage(data.error || "Authentication failed.");
-            }
-        } catch (error) {
-            console.error("Login error:", error);
-            setMessage("Something went wrong. Please try again.");
+        if (response.ok) {
+            setMessage("Token set successfully! Fetching user data...");
+        } else {
+            setMessage(result.error || "Failed to set token.");
         }
-    };
+    } catch (error) {
+        setMessage("Error setting token. Please try again.");
+    }
+};
+
 
   return (
     <StyledWrapper>

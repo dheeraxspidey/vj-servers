@@ -269,16 +269,19 @@ main form p{
     color: white;
     z-index: 4000;
    }
-   .results{
+   .results {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap; 
     justify-content: center;
     align-items: center;
     gap: 30px;
-    width: 80vw;
     margin: auto;
     margin-top: 5vh;
-   }
+    width: 80%; 
+    max-width: 1200px;
+}
+
 
    .side-menu {
     position: fixed;

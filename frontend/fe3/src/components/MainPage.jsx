@@ -18,11 +18,11 @@ function MainPage() {
   const [user, setUser] = useState(null);
   const [iframeSrc, setIframeSrc] = useState('');
   const {token}=useSelector(state=>state.auth);
-console.log(token)
   const { ApplicationsData } = useSelector(state => state.applications);
 
   useEffect(() => {
     fetch('http://localhost:5001/api/user', {
+        method:"GET",
         credentials: 'include'  
     })
     .then(response => {
@@ -32,7 +32,6 @@ console.log(token)
         return response.json();
     })
     .then(data => {
-      console.log(data);
         if (data.username) {
             setUser(data);  
         }

@@ -28,24 +28,18 @@ publicApi.get('/get-all-applications',ExpressAsyncHandler(async (req, res) => {
         return res.send({ message: "Internal Server Error ", success: false });
     }
 }));
-publicApi.post('/login', expressAsyncHandler(async (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ error: "Missing username or password" });
-    }
-
+publicApi.post('/set-api', expressAsyncHandler(async (req, res) => {
+    const {token}= req.body;
     try {
-        const userPayload = { username: username };
-        const jwtToken = jwt.sign(userPayload, 'abcd', { expiresIn: "1h" });
-        res.cookie('token', jwtToken, {  
+
+        res.cookie('token', token, {  
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',  
     maxAge: 6 * 60 * 60 * 1000, 
     sameSite: 'Strict',  
 });
 
-        return res.json({ message: "Login successful", token: jwtToken });
+        return res.json({ message: "Login successful", token: token });
 
     } catch (error) {
         return res.status(500).json({ error: "Authentication failed due to server error" });

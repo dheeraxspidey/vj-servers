@@ -105,8 +105,8 @@ const mc = require('mongodb').MongoClient;
 
 mc.connect(process.env.DB_URL)
   .then(client => {
-    const vnrDB = client.db('vnrDB');
-    const vnrApplications = vnrDB.collection('vnrApplications');
+    const vnrDB = client.db('VNR_DB');
+    const vnrApplications = vnrDB.collection('VNR_APPLICATIONS');
     app.set('vnrApplications', vnrApplications);
     console.log('Connected to Database...');
     const port = process.env.PORT;
