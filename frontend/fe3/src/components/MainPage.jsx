@@ -198,7 +198,7 @@ function MainPage() {
       )}
 
       <main>
-        <h1>VNR APPLICATIONS</h1>
+        <h1>VJ Campus Apps</h1>
         <form onSubmit={handleSubmit}>
           <div className="group">
             <svg className={`icon ${showIframe ? 'search-move' : ''}`} aria-hidden="true" viewBox="0 0 24 24">
