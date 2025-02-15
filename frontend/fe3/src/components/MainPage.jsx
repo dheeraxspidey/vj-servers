@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import Header from './Header';
 import Card from './Card';
 import OpenCloseButton from '../external/OpenCloseButton';
+import Update_App from './Update_App';
 
 function MainPage() {
   const [search, setSearch] = useState('');
@@ -19,9 +20,9 @@ function MainPage() {
   const [iframeSrc, setIframeSrc] = useState('');
   const {token}=useSelector(state=>state.auth);
   const { ApplicationsData } = useSelector(state => state.applications);
-
   useEffect(() => {
-    fetch('http://localhost:5001/api/user', {
+    console.log(import.meta.env.VITE_BACKEND_URL)
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user`, {
         method:"GET",
         credentials: 'include'  
     })
@@ -32,8 +33,8 @@ function MainPage() {
         return response.json();
     })
     .then(data => {
-        if (data.username) {
-            setUser(data);  
+        if (data.user) {
+            setUser(data.user);  
         }
     })
     .catch(err => console.log('Error fetching user data:', err));
@@ -41,13 +42,13 @@ function MainPage() {
 
 
   const handleLogout = () => {
-    fetch('http://localhost:5001/logout', {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/logout`, {
         method: 'GET',
         credentials: 'include'  
     })
     .then(response => response.json())
     .then(data => {
-        window.location.href = "http://localhost:3001";  
+        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}`;  
     })
     .catch(error => console.error('Error:', error));
   };

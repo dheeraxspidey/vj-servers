@@ -9,6 +9,7 @@ function Header() {
           try {
             const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/public/get-all-applications`);
             const data = await response.json();
+            console.log(data)
             if (data.success) {
               dispatch(setApplicationsData(data.data));
             } else {
