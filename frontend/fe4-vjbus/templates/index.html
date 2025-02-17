@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Route Tracking</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <h1>📍 Live Route Tracking</h1>
+        <p id="status">Select a device to start tracking</p>
+        <p id="connection">Connecting to WebSocket...</p>
+
+        <label for="deviceSelect">🔄 Select Device:</label>
+        <select id="deviceSelect">
+            <option value="">-- Select Device --</option>
+            <option value="device_123">Device 123</option>
+            <option value="device_456">Device 456</option>
+            <option value="device_789">Device 789</option>
+        </select>
+
+        <button id="recenter">🔄 Recenter Map</button>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        var map = L.map('map').setView([17.385044,85], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        var markers = {}; 
+        let selectedDevice = ""; 
+        const socket = io("ws://10.45.8.187:3000", { transports: ["websocket"] });
+
+        // WebSocket Connection
+        socket.on("connect", function () {
+            console.log("✅ WebSocket Connected");
+            document.getElementById("connection").innerText = "✅ WebSocket connected!";
+        });
+
+        socket.on("disconnect", function () {
+            console.log("❌ WebSocket Disconnected");
+            document.getElementById("connection").innerText = "❌ WebSocket disconnected!";
+        });
+
+        // Device Selection
+        document.getElementById("deviceSelect").addEventListener("change", function () {
+            selectedDevice = this.value;
+            console.log(`📡 Selected Device: ${selectedDevice}`);
+            document.getElementById("status").innerText = selectedDevice ? `Tracking ${selectedDevice}` : "Select a device to start tracking";
+        });
+
+        // Location Updates
+        socket.on("location_update", function (data) {
+            console.log("📍 Location Update Received:", data);
+            
+            if (data.device_id && data.latitude && data.longitude) {
+                if (!markers[data.device_id]) {
+                    markers[data.device_id] = L.marker([data.latitude, data.longitude]).addTo(map);
+                } else {
+                    markers[data.device_id].setLatLng([data.latitude, data.longitude]);
+                }
+            }
+
+            if (data.device_id === selectedDevice) {
+                document.getElementById("status").innerText = `📡 Live tracking started for ${selectedDevice}`;
+            }
+        });
+
+        // Tracking Status
+        socket.on("tracking_status", function (data) {
+            console.log("🔄 Tracking Status Update:", data);
+            
+            if (data.device_id === selectedDevice) {
+                if (data.status === "stopped") {
+                    document.getElementById("status").innerText = `❌ Live tracking stopped for ${selectedDevice}`;
+                } else if (data.status === "tracking_active") {
+                    document.getElementById("status").innerText = `📡 Live tracking started for ${selectedDevice}`;
+                }
+            }
+            else{
+                document.getElementById("status").innerText = `❌ Live tracking stopped for ${selectedDevice}`;
+            }
+        });
+
+        // Device Disconnected
+        socket.on("device_disconnected", function (data) {
+            console.log("🔌 Device Disconnected:", data);
+            
+            if (data.device_id && markers[data.device_id]) {
+                map.removeLayer(markers[data.device_id]);
+                delete markers[data.device_id];
+            }
+        });
+
+        // Recenter Button
+        document.getElementById("recenter").addEventListener("click", function () {
+            console.log("🔄 Recenter Map Clicked");
+            if (selectedDevice && markers[selectedDevice]) {
+                map.setView(markers[selectedDevice].getLatLng(), 13);
+            }
+        });
+    </script>
+</body>
+</html>
