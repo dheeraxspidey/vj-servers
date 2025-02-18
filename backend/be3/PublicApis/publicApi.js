@@ -3,13 +3,12 @@ const expressAsyncHandler = require('express-async-handler');
 const privateApi = exp.Router();
 const jwt = require('jsonwebtoken');
 require('dotenv').config()
-
-const allowedOrigins = [process.env.FRONTEND_URL, process.env.FRONTEND_URL2];
+const allowedOrigin=process.env.FRONTEND_URL
 privateApi.get('/get-all-applications', expressAsyncHandler(async (req, res) => {
     const origin = req.get('origin');
 
-    if (!origin || allowedOrigins.includes(origin)) {
-        return res.status(403).send({ message: "Access Denied by kp", success: false });
+    if (origin !== allowedOrigin) {
+        return res.status(403).send({ message: "Access Denied", success: false });
     }
 
     try {

@@ -19,7 +19,6 @@ const corsOptions = {
   origin: (origin, callback) => {
     const alwaysAllowedOrigins = [
       process.env.FRONTEND_URL, 
-      process.env.FRONTEND_URL2, 
       "http://campus.vnrzone.site"  // ✅ Always allow this
     ];
 
