@@ -7,7 +7,8 @@ const allowedOrigin=process.env.FRONTEND_URL
 privateApi.get('/get-all-applications', expressAsyncHandler(async (req, res) => {
     const origin = req.get('origin');
 
-    if (origin !== allowedOrigin) {
+    if (!origin || !allowedOrigin == origin) {
+        console.log(`❌ Blocked CORS request from: ${origin}`);
         return res.status(403).send({ message: "Access Denied", success: false });
     }
 
