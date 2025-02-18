@@ -14,19 +14,25 @@ let dynamicOrigins = [];  // Declare dynamicOrigins globally
 app.use(exp.json());
 app.use(cookieParser());
 
-// CORS Configuration with localhost:3001 always allowed
+// CORS Configuration 
 const corsOptions = {
   origin: (origin, callback) => {
-    const alwaysAllowedOrigins = [process.env.FRONTEND_URL];
+    const alwaysAllowedOrigins = [
+      process.env.FRONTEND_URL, 
+      process.env.FRONTEND_URL2, 
+      "http://campus.vnrzone.site"  // ✅ Always allow this
+    ];
 
     if (!origin || alwaysAllowedOrigins.includes(origin) || dynamicOrigins.includes(origin)) {
-      callback(null, true); // Allow if it's localhost:3001 or in dynamic origins
+      callback(null, true);
     } else {
+      console.log(`❌ Blocked CORS request from: ${origin}`); // Debugging logs
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
 };
+
 
 app.use(cors(corsOptions)); // Ensure CORS middleware is above route definitions
 

@@ -93,3 +93,18 @@ python -m http.server 3001
 git fetch origin
 git pull --rebase origin main
 
+
+
+
+BE-3:
+one time: 
+npm install express express-async-handler
+to start : node server
+
+FE-3:
+one time :
+npm install
+
+to run : npm run dev
+
+if any port is running on 3000 it fails as the backend allows only port 3000.
