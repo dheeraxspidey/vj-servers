@@ -45,7 +45,7 @@ const Form = ({ closeForm }) => {
                 await setTokenOnServer(data.token);
 
                 // ✅ Redirect after successful login
-                window.location.href = "/dashboard";
+                window.location.href = "http://campus.vnrzone.site";
             } else {
                 setMessage(data.error || "Authentication failed.");
             }
@@ -57,7 +57,7 @@ const Form = ({ closeForm }) => {
 
     const setTokenOnServer = async (token) => {
         try {
-            const response = await fetch(`/api/public/set-api`, { // ✅ Fixed API URL
+            const response = await fetch(`http://campus.vnrzone.site/sa/api/public/set-api`, { // ✅ Fixed API URL
                 method: "POST",
                 credentials: "include",
                 headers: {
