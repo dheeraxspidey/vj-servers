@@ -2,12 +2,11 @@
 ## Setup 
 
 ### One time setup
-
-cd
-python3 -m venv wall_env
+```
+cd python3 -m venv wall_env
 source ~/wall_env/bin/activate
 pip install flask pandas
-
+```
 
 ### Files Required
 
@@ -34,5 +33,7 @@ http://10.45.8.187:3014/
 
 
 ### Public URL
+http://fakecheck.vnrzone.site/
 http://wall.vnrzone.site
+
 
