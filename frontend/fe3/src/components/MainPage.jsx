@@ -21,8 +21,7 @@ function MainPage() {
   const {token}=useSelector(state=>state.auth);
   const { ApplicationsData } = useSelector(state => state.applications);
   useEffect(() => {
-    console.log(import.meta.env.VITE_BACKEND_URL)
-    fetch("http://campus.vnrzone.site/sa-api/public/set-api", {
+    fetch("http://campus.vnrzone.site/sa-api/api/user", {
         method:"GET",
         credentials: 'include'  
     })
@@ -42,13 +41,13 @@ function MainPage() {
 
 
   const handleLogout = () => {
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/logout`, {
+    fetch("http://campus.vnrzone.site/sa-api/logout", {
         method: 'GET',
         credentials: 'include'  
     })
     .then(response => response.json())
     .then(data => {
-        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}`;  
+        window.location.href = "http://campus.vnrzone.site";  
     })
     .catch(error => console.error('Error:', error));
   };

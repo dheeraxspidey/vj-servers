@@ -42,6 +42,7 @@ const Form = ({ closeForm }) => {
                 // ✅ Store token in local storage (optional)
                 
                 // ✅ Send token to the server to set session
+                console.log(data.token)
                 await setTokenOnServer(data.token);
 
                 // ✅ Redirect after successful login
@@ -57,7 +58,7 @@ const Form = ({ closeForm }) => {
 
     const setTokenOnServer = async (token) => {
         try {
-            const response = await fetch(`http://campus.vnrzone.site/sa/api/public/set-api`, { // ✅ Fixed API URL
+            const response = await fetch("http://campus.vnrzone.site/sa-api/public/set-api", { // ✅ Fixed API URL
                 method: "POST",
                 credentials: "include",
                 headers: {
