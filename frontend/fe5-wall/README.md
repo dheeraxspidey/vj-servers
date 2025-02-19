@@ -22,10 +22,11 @@ Google Sheet
   
 
 ### How to start the app
+```
 source ~/wall_env/bin/activate
 cd fe5-wall
 python3 app.py
-
+```
 
 ### Browser
 
