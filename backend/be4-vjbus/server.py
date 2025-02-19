@@ -1,9 +1,12 @@
 import eventlet
 eventlet.monkey_patch()  # Must be the first line before importing anything else
-
+import geopy
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
+import math
+from geopy import geodesic
+import sqlite3
 
 app = Flask(__name__)
 CORS(app)  # Allow frontend to communicate with backend
@@ -40,7 +43,7 @@ def handle_connect():
 
     connected_devices[request.sid] = device_id
     tracking_status[request.sid] = "started"
-    print(f"✅ Device Connected: {device_id} (Session ID: {request.sid})")
+    print(f"✅ Device Connected 123: {device_id} (Session ID: {request.sid})")
 
     socketio.emit("server_message", {"message": f"Device {device_id} connected!"})
 
@@ -80,12 +83,38 @@ def handle_tracking_status(data):
     else:
         socketio.emit("tracking_status", {"device_id": device_id, "status":status})
 
+
+def is_in_college(lat,lon):
+    COLLEGE=(17.539892408749743, 78.38651776348935)
+    bus_location=(lat,lon)
+    distance=geodesic(COLLEGE,bus_location).meters
+
+    if distance<=100:
+        return True
+    else:
+        return False
+
+def log_data(device_id):
+    try:
+        conn=sqlite3.connect("backend/be4-vjbus/database.db")
+        cursor=conn.cursor()
+
+        insert_query="INSERT into logs values(?,?,?,?)"
+        cursor.execute(insert_query,(device_id,datetime.now().strftime("%Y-%m-%d"),datetime.now().strftime("%H:%M:%S")))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error logging data of {device_id}")
+
+
 @socketio.on("location_update")
 def handle_location_update(data):
     """ Handle location updates from a device """
     device_id = data.get("device_id", "Unknown")
     print(f"📢 Location Update - Device: {device_id}, Data: {data}")
     socketio.emit("location_update", data)
+    if is_in_college(data.latitude,data.longitude):
+        log_data(data.device_id)
+    
     return {"status": "received"}
 
 if __name__ == "__main__":

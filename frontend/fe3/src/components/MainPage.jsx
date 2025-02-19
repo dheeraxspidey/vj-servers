@@ -22,7 +22,7 @@ function MainPage() {
   const { ApplicationsData } = useSelector(state => state.applications);
   useEffect(() => {
     console.log(import.meta.env.VITE_BACKEND_URL)
-    fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user`, {
+    fetch("http://campus.vnrzone.site/sa-api/public/set-api", {
         method:"GET",
         credentials: 'include'  
     })

@@ -8,7 +8,12 @@ function Header() {
     useEffect(() => {
         const fetchApplications = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/public/get-all-applications`);
+                const response = await fetch("http://campus.vnrzone.site/sa-api/public/get-all-applications");
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 if (data.success) {
@@ -17,7 +22,7 @@ function Header() {
                     dispatch(setError("Failed to load Applications."));
                 }
             } catch (error) {
-                console.error("Error fetching Applications", error);
+                console.error("Error fetching Applications:", error.message);
                 dispatch(setError("Failed to load Applications."));
             }
         };
