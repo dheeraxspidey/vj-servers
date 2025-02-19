@@ -5,7 +5,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
 import math
-from geopy import geodesic
+from geopy.distance import geodesic
+import datetime
 import sqlite3
 
 app = Flask(__name__)
@@ -84,12 +85,12 @@ def handle_tracking_status(data):
         socketio.emit("tracking_status", {"device_id": device_id, "status":status})
 
 
-def is_in_college(lat,lon):
+def is_in_college(lon,lat):
     COLLEGE=(17.539892408749743, 78.38651776348935)
     bus_location=(lat,lon)
     distance=geodesic(COLLEGE,bus_location).meters
-
-    if distance<=100:
+    dis=((lat-17.539892408749743)**2+(lon-78.33)**2)**(1/2)
+    if dis<=100:
         return True
     else:
         return False
@@ -103,7 +104,7 @@ def log_data(device_id):
         cursor.execute(insert_query,(device_id,datetime.now().strftime("%Y-%m-%d"),datetime.now().strftime("%H:%M:%S")))
         conn.commit()
     except sqlite3.Error as e:
-        print(f"Error logging data of {device_id}")
+        print(f"Error logging data of {e}")
 
 
 @socketio.on("location_update")
@@ -112,10 +113,10 @@ def handle_location_update(data):
     device_id = data.get("device_id", "Unknown")
     print(f"📢 Location Update - Device: {device_id}, Data: {data}")
     socketio.emit("location_update", data)
-    if is_in_college(data.latitude,data.longitude):
-        log_data(data.device_id)
+    if is_in_college(data["longitude"],data["latitude"]):
+        log_data(data["device_id"])
     
     return {"status": "received"}
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=3000, debug=True)  # Use port 80
+    socketio.run(app, host="0.0.0.0", port=3110, debug=True)  # Use port 80
