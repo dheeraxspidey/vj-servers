@@ -5,7 +5,6 @@ backend/auth-service/.env
 backend/eduprime-auth-service/.env
 backend/eduprime-auth-service/package-lock.json
 backend/be3/node_modules
-backend/be3/package-lock.json
-frontend/fe3/package-lock.json
 frontend/fe3/node_modules/
 frontend/fe6-activity/node_modules/
+package-lock.json
