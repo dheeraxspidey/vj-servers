@@ -129,12 +129,12 @@ Server2 : 10.45.8.187
 
 | Application       | Frontend           | Backend           | Database        | Public URL |
 |------------------|-------------------|------------------|----------------|----------------|
-| SSO (Eduprime)  | N/A               |  5001          | MongoDB        |       N/a         |
-| Campus          | 3000              |  5000          | PostgreSQL     |       campus      |
+| SSO (Eduprime)  | N/A               |  5001  ✅      | MongoDB        |       N/a         |
+| Campus          | 3000  ✅          |  5000  ✅        | PostgreSQL     |       campus      |
 | BusTracker      | 3100              |  3102          | MySQL          |       bus         |
 | UnDoubt         | 3108              |  6040          | Cloud          |       undoubt     |
-| Wall            | 3105              |  N/A           | N/A            |       wall        |
-| Navi            | 3107              |  N/A           | N/A            |       navi        |
+| Wall            | 3105  ✅          |  N/A           | N/A            |       wall        |
+| Navi            | 3107  ✅          |  N/A           | N/A            |       navi        |
 | Activity        | 3106              |  6030           | Cloud         |       activity    |
 | LostNFound      | 3109* <br> 3110    |  6090           | Cloud         |       ????    |
 

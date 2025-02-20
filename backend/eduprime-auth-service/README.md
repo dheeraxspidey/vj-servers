@@ -2,6 +2,7 @@
 This service starts SSO using EduPrime Service. 
 
 # One Time commands
+cd ~/vj-servers/backend/eduprime-auth-service$
 npm install
 
 # How to start
