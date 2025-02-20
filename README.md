@@ -89,7 +89,7 @@ sudo tail -f /var/log/nginx/error.log
 
 #### Start a server instantly. 
 
-python -m http.server 3001
+python -m http.server 30015173
 
 
 #### Useful git commands
@@ -136,3 +136,4 @@ Server2 : 10.45.8.187
 | Wall            | 3105              |  N/A           | N/A            |       wall        |
 | Navi            | 3107              |  N/A           | N/A            |       navi        |
 | Activity        | 3106              |  6030           | Cloud         |       activity    |
+| LostNFound      | 3109* <br> 3110    |  6090           | Cloud         |       ????    |
