@@ -6,6 +6,8 @@
 cd python3 -m venv wall_env
 source ~/wall_env/bin/activate
 pip install flask pandas
+pip install Flask-Caching requests
+
 ```
 
 ### Files Required
