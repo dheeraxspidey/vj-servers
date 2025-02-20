@@ -21,7 +21,7 @@ function NotifyLostItems() {
 
     try {
       await axios.post(
-        "http://localhost:5000/api/items/lost",
+        `${process.env.EASYFIND_BACKEND_URL}/api/items/lost`,
         { category, location, email, itemName },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );

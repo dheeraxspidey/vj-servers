@@ -15,7 +15,7 @@ function LostItems() {
 
       setLoading(true);
       try {
-        const response = await axios.get(`http://localhost:5000/api/items/lost-items/${user.email}`, {
+        const response = await axios.get(`${process.env.EASYFIND_BACKEND_URL}/api/items/lost-items/${user.email}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setItems(response.data);
@@ -31,7 +31,7 @@ function LostItems() {
 
   const handleDelete = async (itemId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/items/lost/${itemId}`, {
+      await axios.delete(`${process.env.EASYFIND_BACKEND_URL}/api/items/lost/${itemId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
 

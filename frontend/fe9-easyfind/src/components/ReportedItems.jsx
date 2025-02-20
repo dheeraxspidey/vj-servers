@@ -26,7 +26,7 @@ function ReportedItems() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/items/reported/${id}`, {
+      await axios.delete(`${process.env.EASYFIND_BACKEND_URL}/api/items/reported/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setItems(items.filter((item) => item._id !== id));

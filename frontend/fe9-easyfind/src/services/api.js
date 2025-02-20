@@ -1,10 +1,7 @@
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
-
-
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_EASYFIND_BACKEND_URL || 'http://localhost:6090'
 });
 
 api.interceptors.request.use((config) => {
@@ -25,7 +22,7 @@ api.interceptors.response.use(
 );
 
 const loginWithGoogle = () => {
-  window.location.href = 'http://localhost:5000/auth/google';
+  window.location.href = `${import.meta.env.VITE_EASYFIND_BACKEND_URL|| 'http://localhost:6090'}/auth/google`;
 };
 
 const setPassword = async (token, password) => {
@@ -42,22 +39,22 @@ const logout = () => {
   localStorage.removeItem('token');
 };
 
-const submitLostItem = async (itemData) => {
-  try {
-    const response = await api.post('/api/items/lost', itemData);
-    return response.data;
-  } catch (error) {
-    console.error('Failed to submit lost item:', error);
-    throw error;
-  }
-};
-
 const submitFoundItem = async (itemData) => {
   try {
     const response = await api.post('/api/items/found', itemData);
     return response.data;
   } catch (error) {
-    console.error('Failed to submit found item:', error);
+    console.error('Error submitting found item:', error);
+    throw error;
+  }
+};
+
+const submitLostItem = async (itemData) => {
+  try {
+    const response = await api.post('/api/items/lost', itemData);
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting lost item:', error);
     throw error;
   }
 };
@@ -99,7 +96,6 @@ const fetchReportedItems = async (user) => {
     throw err;
   }
 };
-
 
 export {
   loginWithGoogle,
