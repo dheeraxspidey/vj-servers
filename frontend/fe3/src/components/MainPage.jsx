@@ -21,7 +21,7 @@ function MainPage() {
   const {token}=useSelector(state=>state.auth);
   const { ApplicationsData } = useSelector(state => state.applications);
   useEffect(() => {
-    fetch("http://campus.vnrzone.site/sa-api/api/user", {
+    fetch("http://campus.vnrzone.site/sa-be/api/user", {
         method:"GET",
         credentials: 'include'  
     })
@@ -41,7 +41,7 @@ function MainPage() {
 
 
   const handleLogout = () => {
-    fetch("http://campus.vnrzone.site/sa-api/logout", {
+    fetch("http://campus.vnrzone.site/sa-be/logout", {
         method: 'GET',
         credentials: 'include'  
     })

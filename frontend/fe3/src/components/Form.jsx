@@ -58,7 +58,7 @@ const Form = ({ closeForm }) => {
 
     const setTokenOnServer = async (token) => {
         try {
-            const response = await fetch("http://campus.vnrzone.site/sa-api/public/set-api", { // ✅ Fixed API URL
+            const response = await fetch("http://campus.vnrzone.site/sa-be/public/set-api", { // ✅ Fixed API URL
                 method: "POST",
                 credentials: "include",
                 headers: {
