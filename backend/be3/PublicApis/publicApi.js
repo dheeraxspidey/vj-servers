@@ -5,12 +5,9 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config()
 const allowedOrigin=process.env.FRONTEND_URL
 privateApi.get('/get-all-applications', expressAsyncHandler(async (req, res) => {
+    console.log("Hello");
     const origin = req.get('origin');
-
-    if (!origin || !allowedOrigin == origin) {
-        console.log(`❌ Blocked CORS request from: ${origin}`);
-        return res.status(403).send({ message: "Access Denied", success: false });
-    }
+    console.log(`Request from origin: ${origin || "undefined"}`);
 
     try {
         const vnrApplications = req.app.get('vnrApplications');
@@ -33,9 +30,10 @@ privateApi.get('/get-all-applications', expressAsyncHandler(async (req, res) => 
 
         return res.send({ message: "Applications Found", data: data, success: true });
     } catch (error) {
-        return res.send({ message: "Internal Server Error", success: false });
+        return res.status(500).send({ message: "Internal Server Error", success: false });
     }
 }));
+
 privateApi.post('/update-url', expressAsyncHandler(async (req, res) => {
     const origin = req.get('origin');
     if (origin !== allowedOrigin) {

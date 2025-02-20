@@ -16,24 +16,18 @@ app.use(cookieParser());
 
 // CORS Configuration 
 const corsOptions = {
-  origin: (origin, callback) => {
-    const alwaysAllowedOrigins = [
-      process.env.FRONTEND_URL, 
-      "http://campus.vnrzone.site"  // ✅ Always allow this
-    ];
-
-    if (!origin || alwaysAllowedOrigins.includes(origin) || dynamicOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log(`❌ Blocked CORS request from: ${origin}`); // Debugging logs
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
+  origin: "*", // Allow requests from all origins
+  credentials: true, // Allow cookies and authentication
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all HTTP methods
+  allowedHeaders: "Origin,X-Requested-With,Content-Type,Accept,Authorization"
 };
 
+app.use(cors(corsOptions));
 
-app.use(cors(corsOptions)); // Ensure CORS middleware is above route definitions
+app.use(cors(corsOptions));
+
+
+// Ensure CORS middleware is above route definitions
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -146,9 +140,10 @@ mc.connect(process.env.DB_URL)
     fetchAccessOrigins(vnrApplications);  // Fetch dynamic origins from DB
 
     const port = process.env.PORT;
-    app.listen(port, () => {
-      console.log(`Server is Running on PORT : ${port}...`);
-    });
+    app.listen(port, "0.0.0.0", () => {
+      console.log("Server running on port 5000");
+  });
+  
 
     setInterval(() => fetchAccessOrigins(vnrApplications), 5 * 60 * 1000);  // Refresh every 5 minutes
   })
