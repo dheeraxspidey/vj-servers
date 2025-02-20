@@ -108,3 +108,22 @@ npm install
 to run : npm run dev
 
 if any port is running on 3000 it fails as the backend allows only port 3000.
+
+Super App Backend is Running on PORT 5000
+and 
+Eduprime Authentication is running on PORT 5001
+and all the Other Child Apps are running on 6000 series(per application 10 ports)
+
+
+Server1 : 10.45.8.186
+Server2 : 10.45.8.187
+
+| Application       | Frontend           | Backend           | Database        | Public URL |
+|------------------|-------------------|------------------|----------------|----------------|
+| SSO (Eduprime)  | N/A               |  5001          | MongoDB        |       N/a         |
+| Campus          | 3000              |  5000          | PostgreSQL     |       campus      |
+| BusTracker      | 3100              |  3102          | MySQL          |       bus         |
+| UnDoubt         | 3108              |  6040          | Cloud          |       undoubt     |
+| Wall            | 3105              |  N/A           | N/A            |       wall        |
+| Navi            | 3107              |  N/A           | N/A            |       navi        |
+| Activity        | 3106              |  6030           | Cloud         |       activity    |
