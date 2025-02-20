@@ -50,7 +50,7 @@ const Signup = () => {
 
       setLoading(true);
       try {
-        const response = await axios.post('http://localhost:6030/api/auth/signup', {
+        const response = await axios.post('http://activity.vnrzone.site/ac-be/api/auth/signup', {
           username: formData.email.split('@')[0],
           email: formData.email,
           password: formData.password,
@@ -76,7 +76,7 @@ const Signup = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:6030/api/user/profile',
+        'http://activity.vnrzone.site/ac-be/api/user/profile',
         profileData,
         {
           headers: {

@@ -53,7 +53,7 @@ const ResumeBuilder = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        'http://localhost:6030/api/user/profile',
+        'http://activity.vnrzone.site/ac-be/api/user/profile',
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -71,7 +71,7 @@ const ResumeBuilder = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        'http://localhost:6030/api/activities',
+        'http://activity.vnrzone.site/ac-be/api/activities',
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -103,7 +103,7 @@ const ResumeBuilder = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        'http://localhost:6030/api/resume/generate',
+        'http://activity.vnrzone.site/ac-be/api/resume/generate',
         {
           template: selectedTemplate,
           type: resumeType,

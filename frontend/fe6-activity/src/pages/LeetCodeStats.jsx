@@ -64,7 +64,7 @@ const LeetCodeStats = () => {
       
       // First check if user has LeetCode connected
       const statusResponse = await axios.get(
-        `http://localhost:6030/api/user/leetcode_status/${username}`,
+        `http://activity.vnrzone.site/ac-be/api/user/leetcode_status/${username}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -72,7 +72,7 @@ const LeetCodeStats = () => {
       
       if (statusResponse.data.has_leetcode) {
         const dataResponse = await axios.get(
-          `http://localhost:6030/api/user/${username}/leetcode_history`,
+          `http://activity.vnrzone.site/ac-be/api/user/${username}/leetcode_history`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setLeetcodeData(dataResponse.data);

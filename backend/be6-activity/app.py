@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3106"}})
+# Allow requests from both localhost and the public domain
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3106", "http://activity.vnrzone.site"]}})
 bcrypt = Bcrypt(app)  # Initialize Flask-Bcrypt
 
 # MongoDB Configuration
@@ -969,10 +970,14 @@ def download_resume(resume_id):
     except Exception as e:
         logger.error(f"Error downloading resume: {str(e)}")
         return jsonify({'error': 'Failed to generate PDF resume'}), 500
-
 @app.after_request
 def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3106'
+    allowed_origins = ['http://localhost:3106', 'http://activity.vnrzone.site']
+    
+    print (request.headers.get('Origin'))
+    if request.headers.get('Origin') in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin')
+
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
     return response

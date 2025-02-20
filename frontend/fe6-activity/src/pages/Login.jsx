@@ -37,7 +37,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:6030/api/auth/login', {
+      const response = await axios.post('http://activity.vnrzone.site/ac-be/api/auth/login', {
         email: formData.email,
         password: formData.password
       });

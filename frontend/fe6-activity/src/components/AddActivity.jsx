@@ -78,7 +78,7 @@ const AddActivity = ({ open, onClose, onActivityAdded }) => {
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
-        `http://localhost:6030/api/add_activity`,
+        `http://activity.vnrzone.site/ac-be/api/add_activity`,
         {
           title: formData.title,
           activity_type: formData.type,

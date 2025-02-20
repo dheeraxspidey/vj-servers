@@ -1,14 +1,12 @@
 # One time setup
 
-python3 -m venv alogger
-source ~/alogger/bin/activate
+npm install
 
-cd ~/child-apps/activitylogging-main/server
-pip install -r requirements.txt
+# Start the server
 
-# How to Start the server
+npm start
 
-cd ~/child-apps/activitylogging-main/server
-pip install -r requirements.txt
+## Test the application
 
-python3 app.py
+http://localhost:3106/ 
+

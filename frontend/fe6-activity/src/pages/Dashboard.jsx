@@ -168,7 +168,7 @@ const Dashboard = ({ logout }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `http://localhost:6030/api/activities`,
+        `http://activity.vnrzone.site/ac-be/api/activities`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -216,7 +216,7 @@ const Dashboard = ({ logout }) => {
       const token = localStorage.getItem('token');
       console.log('Checking LeetCode status for user:', username);
       const response = await axios.get(
-        `http://localhost:6030/api/user/leetcode_status/${username}`,
+        `http://activity.vnrzone.site/ac-be/api/user/leetcode_status/${username}`,
         { 
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
@@ -252,7 +252,7 @@ const Dashboard = ({ logout }) => {
       const token = localStorage.getItem('token');
       console.log('Fetching LeetCode data for user:', username);
       const response = await axios.get(
-        `http://localhost:6030/api/user/${username}/leetcode_history`,
+        `http://activity.vnrzone.site/ac-be/api/user/${username}/leetcode_history`,
         { 
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
@@ -303,7 +303,7 @@ const Dashboard = ({ logout }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:6030/api/user/${username}/set_leetcode_username`,
+        `http://activity.vnrzone.site/ac-be/api/user/${username}/set_leetcode_username`,
         { leetcode_username: newLeetcodeUsername },
         { 
           headers: { Authorization: `Bearer ${token}` },

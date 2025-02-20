@@ -35,7 +35,7 @@ const Profile = ({ open, onClose }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        'http://localhost:6030/api/user/profile',
+        'http://activity.vnrzone.site/ac-be/api/user/profile',
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -90,7 +90,7 @@ const Profile = ({ open, onClose }) => {
       };
 
       await axios.post(
-        'http://localhost:6030/api/user/profile',
+        'http://activity.vnrzone.site/ac-be/api/user/profile',
         formattedData,
         {
           headers: {
