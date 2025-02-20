@@ -5,11 +5,13 @@ const passport = require("passport");
 const authRoutes = require("./apis/auth/auth.route");
 const itemsRoutes = require("./apis/items/items.route");    
 const userDetails = require("./apis/users/userDetails");
+const connectDB=require('./config/db')
 // const securityRoutes = require("./apis/security/security.route");
 
 const app = express();
 
 // Database connection
+connectDB()
     
 // Middleware
 app.use(cors());
