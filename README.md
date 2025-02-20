@@ -75,6 +75,9 @@ Discard local changes & force sync	`git reset --hard origin/main`
 ## Debugging
 
 ### NGINX
+
+sudo systemctl restart nginx
+
 sudo systemctl status nginx
 sudo systemctl start nginx
 
@@ -92,6 +95,12 @@ python -m http.server 3001
 #### Useful git commands
 git fetch origin
 git pull --rebase origin main
+
+
+#### Helpful utility commands
+sudo rm -f /etc/nginx/.nginx.conf.swp
+ps aux | grep nginx.conf
+sudo kill -9 140019
 
 
 
