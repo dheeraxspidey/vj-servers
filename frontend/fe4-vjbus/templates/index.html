@@ -13,95 +13,142 @@
 <body>
     <div class="container">
         <h1>📍 Live Route Tracking</h1>
-        <p id="status">Select a device to start tracking</p>
-        <p id="connection">Connecting to WebSocket...</p>
+        <p id="status">Select a route to start tracking</p>
+        <p id="connection">Loading...</p>
 
-        <label for="deviceSelect">🔄 Select Device:</label>
-        <select id="deviceSelect">
-            <option value="">-- Select Device --</option>
-            <option value="device_123">Device 123</option>
-            <option value="device_456">Device 456</option>
-            <option value="device_789">Device 789</option>
+        <label for="routeSelect">🔄 Select Route:</label>
+        <select id="routeSelect">
+            <option value="">-- Select Route --</option>
         </select>
+
+        <button id="find-distance" style="display: none;">📏 Find Distance</button>
+        <p id="distance-time">📏 Distance: -- | ⏳ ETA: --</p>
+        <p id="last-updated" style="color: gray; font-size: 14px;"></p>
 
         <button id="recenter">🔄 Recenter Map</button>
         <div id="map"></div>
     </div>
 
     <script>
-        var map = L.map('map').setView([17.385044,85], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        var map = L.map("map").setView([17.385044, 78.4867], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
 
-        var markers = {}; 
-        let selectedDevice = ""; 
+        var markers = {};
+        let selectedRoute = "";
+        let latestBusLocation = null;
         const socket = io("ws://103.248.208.119:3110", { transports: ["websocket"] });
 
-        // WebSocket Connection
+        let routes = ["Route-1", "Route-2", "Route-3", "Route-4A", "Route-4B", "Route-5", "Route-6", "Route-7", "Route-8", "Route-9", "Route-10", 
+            "Route-S-1", "Route-S-2", "Route-S-3", "Route-S-41", "Route-S-42", "Route-S-43", "Route-S-44", "Route-S-5", "Route-S-6", "Route-S-7", "Route-S-8"];
+
+        const routeSelect = document.getElementById("routeSelect");
+        routes.forEach((route) => {
+            let option = document.createElement("option");
+            option.value = route;
+            option.textContent = route;
+            routeSelect.appendChild(option);
+        });
+
         socket.on("connect", function () {
-            console.log("✅ WebSocket Connected");
-            document.getElementById("connection").innerText = "✅ WebSocket connected!";
+            document.getElementById("connection").innerText = "🚌 Let's Goo..!!";
         });
 
         socket.on("disconnect", function () {
-            console.log("❌ WebSocket Disconnected");
-            document.getElementById("connection").innerText = "❌ WebSocket disconnected!";
+            document.getElementById("connection").innerText = "🧘 Patience is bitter, but its fruit is sweet.. 🧘‍♀️";
         });
 
-        // Device Selection
-        document.getElementById("deviceSelect").addEventListener("change", function () {
-            selectedDevice = this.value;
-            console.log(`📡 Selected Device: ${selectedDevice}`);
-            document.getElementById("status").innerText = selectedDevice ? `Tracking ${selectedDevice}` : "Select a device to start tracking";
+        routeSelect.addEventListener("change", function () {
+            if (selectedRoute) {
+                socket.emit("unsubscribe", selectedRoute);
+            }
+            selectedRoute = this.value;
+            document.getElementById("status").innerText = selectedRoute ? `Tracking ${selectedRoute}` : "Select a route to start tracking";
+            document.getElementById("find-distance").style.display = "none"; // Hide "Find Distance" button
+
+            if (selectedRoute) {
+                socket.emit("subscribe", selectedRoute);
+            }
         });
 
-        // Location Updates
+        function getUserLocation(callback) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        callback(`${lon},${lat}`);
+                    },
+                    (error) => {
+                        console.error("Error fetching user location", error);
+                        callback(null);
+                    }
+                );
+            } else {
+                console.error("Geolocation is not supported by this browser.");
+                callback(null);
+            }
+        }
+
+        async function getDistanceTime(origin, destination) {
+            const apiKey = "5b3ce3597851110001cf62482857e9e0b56340e5b71e320b96d88bec";  
+            const url = `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${apiKey}&start=${encodeURIComponent(origin)}&end=${encodeURIComponent(destination)}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const segment = data.features[0].properties.segments[0];  // Corrected path
+                
+                const distance = (segment.distance / 1000).toFixed(2) + " km";  // Convert meters to km
+                const duration = (segment.duration / 60).toFixed(2) + " min";  // Convert seconds to minutes
+
+                document.getElementById("distance-time").innerText = `📏 Distance: ${distance} | ⏳ ETA: ${duration}`;
+                document.getElementById("last-updated").innerText = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error("❌ Error fetching data:", error);
+            }
+        }
+
         socket.on("location_update", function (data) {
-            console.log("📍 Location Update Received:", data);
-            
-            if (data.device_id && data.latitude && data.longitude) {
-                if (!markers[data.device_id]) {
-                    markers[data.device_id] = L.marker([data.latitude, data.longitude]).addTo(map);
+            if (data.route_id !== selectedRoute) return;
+
+            if (data.latitude && data.longitude && data.status === "tracking_active") {
+                latestBusLocation = `${data.longitude},${data.latitude}`;
+                document.getElementById("find-distance").style.display = "inline-block";
+
+                if (!markers[selectedRoute]) {
+                    markers[selectedRoute] = L.marker([data.latitude, data.longitude]).addTo(map);
                 } else {
-                    markers[data.device_id].setLatLng([data.latitude, data.longitude]);
+                    markers[selectedRoute].setLatLng([data.latitude, data.longitude]);
                 }
-            }
 
-            if (data.device_id === selectedDevice) {
-                document.getElementById("status").innerText = `📡 Live tracking started for ${selectedDevice}`;
+                document.getElementById("status").innerText = `🚌 Live tracking started for ${selectedRoute}`;
             }
-        });
-
-        // Tracking Status
-        socket.on("tracking_status", function (data) {
-            console.log("🔄 Tracking Status Update:", data);
-            
-            if (data.device_id === selectedDevice) {
-                if (data.status === "stopped") {
-                    document.getElementById("status").innerText = `❌ Live tracking stopped for ${selectedDevice}`;
-                } else if (data.status === "tracking_active") {
-                    document.getElementById("status").innerText = `📡 Live tracking started for ${selectedDevice}`;
+            else if (data.status === "stopped") {
+                if (markers[selectedRoute]) {
+                    markers[selectedRoute].remove();
+                    delete markers[selectedRoute];
                 }
-            }
-            else{
-                document.getElementById("status").innerText = `❌ Live tracking stopped for ${selectedDevice}`;
-            }
-        });
-
-        // Device Disconnected
-        socket.on("device_disconnected", function (data) {
-            console.log("🔌 Device Disconnected:", data);
-            
-            if (data.device_id && markers[data.device_id]) {
-                map.removeLayer(markers[data.device_id]);
-                delete markers[data.device_id];
+                document.getElementById("status").innerText = `🛑 Live tracking stopped for ${selectedRoute}`;
+                document.getElementById("find-distance").style.display = "none"; // Hide "Find Distance" button
             }
         });
 
-        // Recenter Button
+        document.getElementById("find-distance").addEventListener("click", function () {
+            if (!latestBusLocation) return;
+
+            getUserLocation((userLocation) => {
+                if (userLocation) {
+                    getDistanceTime(userLocation, latestBusLocation);
+                    // getDistanceTime("78.3948765, 17.5500823", latestBusLocation);
+                }
+            });
+        });
+
         document.getElementById("recenter").addEventListener("click", function () {
-            console.log("🔄 Recenter Map Clicked");
-            if (selectedDevice && markers[selectedDevice]) {
-                map.setView(markers[selectedDevice].getLatLng(), 13);
+            if (selectedRoute && markers[selectedRoute]) {
+                map.setView(markers[selectedRoute].getLatLng(), 13);
             }
         });
     </script>
