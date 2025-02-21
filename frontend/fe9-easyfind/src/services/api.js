@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_EASYFIND_BACKEND_URL || 'http://localhost:6090'
+  baseURL: import.meta.env.VITE_EASYFIND_BACKEND_URL || 'easyfind.vnrzone.site/ef-be/'
 });
 
 api.interceptors.request.use((config) => {

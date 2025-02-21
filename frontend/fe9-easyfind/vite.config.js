@@ -12,5 +12,10 @@ export default defineConfig({
       '103.248.208.119' 
       
     ],
+    strictPort: true,
+    hmr: {
+      host: "easyfind.vnrzone.site",
+      protocol: "ws"
+    }
   }
 })
