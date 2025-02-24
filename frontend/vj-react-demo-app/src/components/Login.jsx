@@ -1,6 +1,6 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { AuthContext } from "./AuthContext";
+import { AuthContext } from "../context/AuthContext";
 
 const Login = () => {
     const { login } = useContext(AuthContext);

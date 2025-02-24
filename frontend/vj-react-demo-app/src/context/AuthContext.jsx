@@ -1,8 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api"; // Update if backend runs on a different port
-
+const API_URL = "http://localhost:5000/api";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -10,7 +9,6 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check login status when app loads
         axios.get(`${API_URL}/check-login`, { withCredentials: true })
             .then(response => {
                 if (response.data.logged_in) {
@@ -26,7 +24,7 @@ export const AuthProvider = ({ children }) => {
             const response = await axios.post(`${API_URL}/login`, { username, password, redirect_url: redirectUrl }, { withCredentials: true });
             if (response.data.success) {
                 setUser(username);
-                return response.data.redirect; // Return the redirect URL
+                return response.data.redirect;
             }
         } catch (error) {
             console.error("Login failed", error);
