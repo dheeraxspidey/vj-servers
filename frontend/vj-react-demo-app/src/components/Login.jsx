@@ -1,6 +1,9 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
+
+const API_URL = "http://localhost:5000/api";  // ✅ SSO Backend
 
 const Login = () => {
     const { login } = useContext(AuthContext);
@@ -12,9 +15,12 @@ const Login = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        const redirect = await login(username, password, redirectUrl);
-        if (redirect) navigate(redirect);
-        else alert("Login failed. Check credentials.");
+        const response = await login(username, password, redirectUrl);
+        if (response) {
+            window.location.href = redirectUrl;  // ✅ Redirect back to the original app
+        } else {
+            alert("Login failed!");
+        }
     };
 
     return (
@@ -25,6 +31,7 @@ const Login = () => {
                 <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <button type="submit">Login</button>
             </form>
+            <p>Don't have an account? <a href="/signup">Sign Up</a></p>
         </div>
     );
 };
