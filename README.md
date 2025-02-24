@@ -137,3 +137,15 @@ Server2 : 10.45.8.187
 | Navi            | 3107              |  N/A           | N/A            |       navi        |
 | Activity        | 3106              |  6030           | Cloud         |       activity    |
 | LostNFound      | 3109* <br> 3110    |  6090           | Cloud         |       ????    |
+
+
+## Github user management 
+
+Remove old agents
+ssh-add -D
+
+Add new agent head_iie
+ssh-add ~/.ssh/head_iie
+
+git remote set-url origin git@github.com:head-iie-vnr/vj-servers.git
+
