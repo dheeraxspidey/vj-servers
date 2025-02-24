@@ -1,12 +1,10 @@
 from flask import Flask, render_template,jsonify
 import sqlite3
-
-from flask_cors import CORS
 app = Flask(__name__)
-CORS(app)  
+
 def get_db_connection():
     # conn = sqlite3.connect("../database.db")
-    conn = sqlite3.connect("../../backend/be4-vjbus/database.db")
+    conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -30,6 +28,12 @@ def driver():
 @app.route('/admin')
 def admin():
     return render_template('admin.html')  # Serves admin.html
+
+
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3104, debug=True)

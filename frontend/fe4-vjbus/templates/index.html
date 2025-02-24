@@ -3,12 +3,64 @@
 <head>
     <title>Live Route Tracking</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=route-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        #map {
+            height: 500px;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        #recenter { background: #007bff; color: white; }
+        #find-distance { background: #28a745; color: white; }
+        .chat-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #007bff;
+        color: white;
+        z-index: 1000 !important; 
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        font-size: 24px;
+        transition: background 0.3s ease;
+        text-decoration: none;
+    }
 
+    .chat-button:hover {
+        background-color: #0056b3;
+    }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -28,15 +80,35 @@
         <button id="recenter">🔄 Recenter Map</button>
         <div id="map"></div>
     </div>
+    <a href="#" id="chatLink" class="chat-button">💬</a>
 
     <script>
-        var map = L.map("map").setView([17.385044, 78.4867], 13);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+        document.getElementById("chatLink").addEventListener("click", function () {
+            window.location.href = "https://bus.vnrzone.site/chat"; // Replace with your actual chat link
+        });
+    </script>
+
+    <script>
+        var map = L.map("map").setView([17.540529, 78.387034], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+        // import L from 'leaflet';
+
+// Define a custom icon
+    const customIcon = L.icon({
+        iconUrl: 'https://cdn1.iconfinder.com/data/icons/leto-blue-map-pins/64/pin_marker_location-31-1024.png', // Change this to the actual path
+        iconSize: [32, 32], // Size of the icon
+        iconAnchor: [16, 32], // Point of the icon which corresponds to marker's location
+        popupAnchor: [0, -32] // Point where the popup should open relative to the iconAnchor
+    });
+
+    // Create a marker with the custom icon
+    // const marker = L.marker([17.540529, 78.387034],  { icon: customIcon }).addTo(map);
+
 
         var markers = {};
         let selectedRoute = "";
         let latestBusLocation = null;
-        const socket = io("ws://103.248.208.119:3110", { transports: ["websocket"] });
+        const socket = io("wss://bus.vnrzone.site", { transports: ["websocket"] });
 
         let routes = ["Route-1", "Route-2", "Route-3", "Route-4A", "Route-4B", "Route-5", "Route-6", "Route-7", "Route-8", "Route-9", "Route-10", 
             "Route-S-1", "Route-S-2", "Route-S-3", "Route-S-41", "Route-S-42", "Route-S-43", "Route-S-44", "Route-S-5", "Route-S-6", "Route-S-7", "Route-S-8"];
@@ -122,7 +194,7 @@
                 } else {
                     markers[selectedRoute].setLatLng([data.latitude, data.longitude]);
                 }
-
+                console.log(data)
                 document.getElementById("status").innerText = `🚌 Live tracking started for ${selectedRoute}`;
             }
             else if (data.status === "stopped") {
@@ -130,6 +202,7 @@
                     markers[selectedRoute].remove();
                     delete markers[selectedRoute];
                 }
+                console.log(data)
                 document.getElementById("status").innerText = `🛑 Live tracking stopped for ${selectedRoute}`;
                 document.getElementById("find-distance").style.display = "none"; // Hide "Find Distance" button
             }

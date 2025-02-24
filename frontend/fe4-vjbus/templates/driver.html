@@ -4,8 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VJ Bus Driver</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
-    <link rel="stylesheet" href="../static/css/driver-styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        .route-select {
+            margin-bottom: 20px;
+        }
+        .tracking-status, .connection-status {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .toggle-button {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .toggle-button.stop {
+            background-color: red;
+        }
+        .toggle-button.go {
+            background-color: blue;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,32 +58,18 @@
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script>
-        const websocketUrl = "ws://103.248.208.119:3110";
+        const websocketUrl = "wss://bus.vnrzone.site";
         let isTracking = false;
         let selectedrouteId = "";
         let socket = io(websocketUrl, { transports: ['websocket'], autoConnect: false });
         socket.connect();
 
-        let routes = [];  // Global array to store the routes
-
-        function fetchRoutes() {
-            const xhr = new XMLHttpRequest()
-            xhr.open('GET', 'http://localhost:3110/get-bus-list', false);  // `false` makes it synchronous
-            
-            xhr.setRequestHeader('Content-Type', 'application/json');  // Set request headers
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    routes = JSON.parse(xhr.responseText);
-                } else {
-                    console.error('Error:', xhr.status, xhr.statusText);
-                }
-            };
-            
-            xhr.send();  // Send the request
-        }
+        // route list (Replace this with API fetching if needed)
+        const routes =['Route-1', 'Route-2', 'Route-3', 'Route-4A','Route-4B', 'Route-5', 'Route-6', 'Route-7', 'Route-8', 'Route-9', 'Route-10', 
+        'Route-S-1', 'Route-S-2', 'Route-S-3', 'Route-S-41','Route-S-42','Route-S-43','Route-S-44', 'Route-S-5', 'Route-S-6', 'Route-S-7', 'Route-S-8'];
+;
 
         function populateRouteDropdown() {
-            fetchRoutes();
             const selectElement = document.getElementById("routeSelect");
             selectElement.innerHTML = '<option value="">-- Select route --</option>'; 
             routes.forEach(route => {
@@ -74,7 +98,7 @@
         document.getElementById('toggleButton').addEventListener('click', toggleTracking);
 
         function toggleTracking() {
-            if (selectedRouteId=="") {
+            if (!selectedRouteId) {
                 alert("Please select a Route first!");
                 return;
             }
