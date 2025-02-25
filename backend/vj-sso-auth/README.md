@@ -25,7 +25,7 @@ cd vj-sso-auth
 ### **2️⃣ Create a Virtual Environment**
 ```sh
 python3 -m venv vj_sso
-source vj_sso/bin/activate  # On Windows: vj_sso\Scripts\activate
+source ~/vj_sso/bin/activate  # On Windows: vj_sso\Scripts\activate
 ```
 
 ### **3️⃣ Install Dependencies**
@@ -48,6 +48,8 @@ python3 -c 'from database import db, init_db; from app import app; init_db(app)'
 
 ### **6️⃣ Run the Application (Development Mode)**
 ```sh
+source ~/vj_sso/bin/activate
+cd ~/vj-servers/backend/vj-sso-auth
 python app.py
 ```
 Access the service at: **`http://127.0.0.1:5000/`**

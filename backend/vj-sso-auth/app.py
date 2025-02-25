@@ -5,9 +5,10 @@ from database import db, init_db, User, users
 from auth_routes import auth_routes
 import config
 
+
 app = Flask(__name__)
 app.config.from_object(config)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=["https://superapp.vnrzone.site"])
 
 # Initialize database
 init_db(app)

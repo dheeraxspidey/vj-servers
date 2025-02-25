@@ -9,7 +9,8 @@ export default defineConfig({
     port:3102,
     allowedHosts: [
       '127.0.0.1', // or 'localhost' - Important for dev server access
-      '103.248.208.119' 
+      '103.248.208.119', 
+      'superapp.vnrzone.site',
     ],
   }
 })

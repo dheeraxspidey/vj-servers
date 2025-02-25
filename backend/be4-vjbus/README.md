@@ -21,4 +21,5 @@ This will serve the frontend server
 cd ~/vj-servers/backend/be4-vjbus
 source ~/vjbus_env/bin/activate
 
+python3 server.py
 

