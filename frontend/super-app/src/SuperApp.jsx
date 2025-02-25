@@ -1,23 +1,9 @@
 import React, { useState, useContext } from "react";
-import { AuthProvider, AuthContext } from "../../vj-react-demo-app/src/context/AuthContext";
+import { AuthProvider, AuthContext } from "../../vj-sso-fe/src/context/AuthContext";
 
 const APPS = [
     { name: "App One", url: "http://localhost:5174/", icon: "📁" },
-    { name: "App Two", url: "http://localhost:5175/", icon: "📊" },
-    { name: "App Three", url: "http://localhost:5176/", icon: "⚙️" },
-    { name: "Calendar", url: "http://localhost:5174/", icon: "📅" },
-    { name: "Chat", url: "http://localhost:5174/", icon: "💬" },
-    { name: "Music", url: "http://localhost:5174/", icon: "🎵" },
-    { name: "Video", url: "http://localhost:5175/", icon: "📹" },
-    { name: "Notes", url: "http://localhost:5175/", icon: "📝" },
-    { name: "Finance", url: "http://localhost:5175/", icon: "💰" },
-    { name: "Shopping", url: "http://localhost:5175/", icon: "🛒" },
-    { name: "Weather", url: "http://localhost:5175/", icon: "🌦️" },
-    { name: "Maps", url: "http://localhost:5175/", icon: "🗺️" },
-    { name: "Mail", url: "http://localhost:5176/", icon: "📧" },
-    { name: "Health", url: "http://localhost:5176/", icon: "🏥" },
-    { name: "Fitness", url: "http://localhost:5176/", icon: "🏋️" },
-    { name: "News", url: "http://localhost:5176/", icon: "📰" }
+    { name: "App Two", url: "http://localhost:5173/", icon: "📊" },
 ];
 
 
@@ -50,7 +36,7 @@ const SuperAppContent = () => {
                             </button>
                         </>
                     ) : (
-                        <a href={`http://vj-sso.vnrzone.site:5173/login?redirect=${encodeURIComponent(window.location.href)}`} style={{ color: "white", textDecoration: "none" }}>Login</a>
+                        <a href={`http://sso.vnrzone.site/login?redirect=${encodeURIComponent(window.location.href)}`} style={{ color: "white", textDecoration: "none" }}>Login</a>
                     )}
                 </div>
             </header>

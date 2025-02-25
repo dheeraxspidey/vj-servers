@@ -8,7 +8,7 @@ import config
 
 app = Flask(__name__)
 app.config.from_object(config)
-CORS(app, supports_credentials=True, origins=["https://superapp.vnrzone.site"])
+CORS(app, supports_credentials=True, origins=["https://superapp.vnrzone.site", "https://sso.vnrzone.site"])
 
 # Initialize database
 init_db(app)

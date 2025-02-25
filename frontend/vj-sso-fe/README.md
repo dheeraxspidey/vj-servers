@@ -1,13 +1,13 @@
 ## One Time Setup
 
-npm create vite@latest vj-react-demo-app -- --template react
+npm create vite@latest vj-sso-fe -- --template react
 
-cd vj-react-demo-app
+cd vj-sso-fe
 npm install
 npm run dev
 
 
-npx create-react-app vj-react-demo-app
+npx create-react-app vj-sso-fe
 
 
 npm install axios react-router-dom
