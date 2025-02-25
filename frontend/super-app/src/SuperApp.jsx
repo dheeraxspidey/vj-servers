@@ -20,6 +20,7 @@ const APPS = [
     { name: "News", url: "http://localhost:5176/", icon: "📰" }
 ];
 
+
 const SuperAppContent = () => {
     const { user, logout, loading } = useContext(AuthContext);
     const [activeApp, setActiveApp] = useState(null);
@@ -27,9 +28,9 @@ const SuperAppContent = () => {
     if (loading) return <p>Loading...</p>;
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw" }}>
-        <header style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "#007bff", color: "white", width: "100%" }}>
-            <h2>SuperApp</h2>
+        <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>
+            <header style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "#007bff", color: "white", width: "100%", boxSizing: "border-box" }}>
+                <h2>SuperApp</h2>
                 <div>
                     {user ? (
                         <>
@@ -57,10 +58,14 @@ const SuperAppContent = () => {
             {activeApp === null ? (
                 <div style={{ 
                     display: "grid", 
-                    gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", 
-                    gap: "15px", 
+                    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", 
+                    gap: "20px", 
                     padding: "20px", 
-                    textAlign: "center" 
+                    textAlign: "center", 
+                    width: "100vw", 
+                    maxWidth: "100%", 
+                    margin: "0 auto",
+                    boxSizing: "border-box"
                 }}>
                     {APPS.map((app) => (
                         <div key={app.url} 
@@ -74,8 +79,10 @@ const SuperAppContent = () => {
                                 flexDirection: "column", 
                                 alignItems: "center", 
                                 justifyContent: "center", 
-                                minWidth: "100px", 
-                                minHeight: "100px" 
+                                minWidth: "120px", 
+                                minHeight: "120px", 
+                                width: "100%",
+                                boxSizing: "border-box"
                             }} 
                             onClick={() => setActiveApp(app.url)}>
                             <div style={{ fontSize: "40px" }}>{app.icon}</div>
