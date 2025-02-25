@@ -8,7 +8,31 @@ import config
 
 app = Flask(__name__)
 app.config.from_object(config)
-CORS(app, supports_credentials=True, origins=["https://superapp.vnrzone.site", "https://sso.vnrzone.site"])
+
+CORS(app, 
+     supports_credentials=True, 
+     origins=["https://superapp.vnrzone.site", "https://sso.vnrzone.site"], 
+     allow_headers=["Content-Type", "Authorization"], 
+     methods=["GET", "POST", "OPTIONS"]
+)
+
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Loads user from the session for Flask-Login."""
+    print(f"🔍 Loading user from session: {user_id}")  # ✅ Debug print
+
+    if not user_id or user_id == "None":
+        return None  # ✅ Prevents errors if _user_id is missing
+
+    if user_id in users:  # ✅ Check static users
+        return User(id=user_id, username=user_id, password=users[user_id])
+
+    return User.query.get(user_id)  # ✅ Fetch from database
+
 
 # Initialize database
 init_db(app)

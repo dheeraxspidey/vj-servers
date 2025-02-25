@@ -10,7 +10,7 @@ class User(UserMixin, db.Model):
     
 
 # Mock user database (for simplicity, replace with actual database usage)
-users = {"user1": "password123", "user2": "securepass"}
+users = {"user1": "user", "user2": "user"}
 
 def init_db(app):
     print("🔹 Initializing Database...")  # Moved print inside function
