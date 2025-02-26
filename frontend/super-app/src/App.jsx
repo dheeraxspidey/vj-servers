@@ -5,6 +5,7 @@ import SuperAppContent from "./SuperAppContent";
 const App = () => {
   const [user, setUser] = useState(null);
 
+  
   // ✅ Load user from localStorage when the app starts
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
