@@ -1,12 +1,12 @@
 import React from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
-const clientId = "YOUR_GOOGLE_CLIENT_ID"; // Replace with your Client ID
+const clientId = "522460567146-ubk3ojomopil8f68hl73jt1pj0jbbm68.apps.googleusercontent.com"; 
 
 const Login = ({ onLoginSuccess }) => {
   const handleLoginSuccess = (response) => {
     console.log("Login Success:", response);
-    const idToken = response.credential; // Get JWT Token from Google
+    const idToken = response.credential;
     authenticateUser(idToken);
   };
 
@@ -22,23 +22,25 @@ const Login = ({ onLoginSuccess }) => {
         body: JSON.stringify({ token: idToken }),
       });
       const data = await res.json();
-      
-      if (data.token) {
-        localStorage.setItem("userToken", data.token); // Store token for session
-        onLoginSuccess(data.user); // Pass user data to parent component
-      }
+      console.log("User Authenticated:", data);
+      localStorage.setItem("userToken", data.token);
+      onLoginSuccess(data.user);
     } catch (error) {
       console.error("Authentication Error:", error);
     }
   };
 
   return (
-    <div>
-      <h2>Campus App Login</h2>
-      <GoogleOAuthProvider clientId={clientId}>
-        <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} />
-      </GoogleOAuthProvider>
-    </div>
+    <GoogleOAuthProvider clientId={clientId}>
+      <div>
+        <h2>Campus App Login</h2>
+        <GoogleLogin
+          onSuccess={handleLoginSuccess}
+          onError={handleLoginFailure}
+          redirect_uri="http://superapp.vnrzone.site/auth/callback" // Ensure this matches Google Console
+        />
+      </div>
+    </GoogleOAuthProvider>
   );
 };
 

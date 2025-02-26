@@ -2,6 +2,11 @@
 npm install 
 
 ## How to run the server. 
-node server.js
 
+```
+npx nodemon server.js
+```
+
+### You may also use this
+node server.js
 
