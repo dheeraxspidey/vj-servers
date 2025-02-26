@@ -1,7 +1,5 @@
 ### One time setup 
 
-npm install @react-oauth/google
-
 npm install
 
 

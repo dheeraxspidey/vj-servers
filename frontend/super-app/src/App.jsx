@@ -1,8 +1,19 @@
-import React from "react";
-import SuperApp from "./SuperApp";
+import React, { useState } from "react";
+import Login from "./Login";
+import Dashboard from "./Dashboard"; // Create a dashboard component
 
 const App = () => {
-    return <SuperApp />;
+  const [user, setUser] = useState(null);
+
+  return (
+    <div>
+      {!user ? (
+        <Login onLoginSuccess={setUser} />
+      ) : (
+        <Dashboard user={user} />
+      )}
+    </div>
+  );
 };
 
 export default App;

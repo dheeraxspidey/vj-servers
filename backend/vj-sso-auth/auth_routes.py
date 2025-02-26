@@ -52,7 +52,7 @@ def login():
         response = jsonify({"success": True, "redirect": redirect_url})
         response.set_cookie(
             "sso_token", "your_secure_token",
-            domain=".vnrzone.site",  # ✅ Works for all subdomains
+            domain="superapp.vnrzone.site",  # ✅ Works for all subdomains
             httponly=True,
             secure=True,
             samesite="None"
