@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from "react";
+// const clientId = "522460567146-ubk3ojomopil8f68hl73jt1pj0jbbm68.apps.googleusercontent.com"; 
+
+import React from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import Cookies from "js-cookie";
 
 const clientId = "522460567146-ubk3ojomopil8f68hl73jt1pj0jbbm68.apps.googleusercontent.com"; 
 
@@ -12,7 +15,7 @@ const Login = ({ onLoginSuccess }) => {
 
     const authenticateUser = async (idToken) => {
         try {
-            const res = await fetch("http://localhost:5000/auth/google", {
+            const res = await fetch("https://superapp.vnrzone.site/auth/google", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token: idToken }),
@@ -20,9 +23,9 @@ const Login = ({ onLoginSuccess }) => {
             const data = await res.json();
 
             if (data.token) {
-                localStorage.setItem("userToken", data.token);
-                localStorage.setItem("user", JSON.stringify(data.user)); // ✅ Store user in localStorage
-                onLoginSuccess(data.user); // Update App.js state
+                Cookies.set("userToken", data.token, { domain: ".vnrzone.site", path: "/", secure: true, sameSite: "Lax" });
+                Cookies.set("user", JSON.stringify(data.user), { domain: ".vnrzone.site", path: "/", secure: true, sameSite: "Lax" });
+                onLoginSuccess(data.user);
             }
         } catch (error) {
             console.error("Authentication Error:", error);

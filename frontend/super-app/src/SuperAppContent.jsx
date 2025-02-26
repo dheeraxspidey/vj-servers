@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 
 const APPS = [
-    { name: "App One", url: "http://localhost:5174/", icon: "📁" },
-    { name: "App Two", url: "http://localhost:5173/", icon: "📊" },
+    { name: "App One", url: "https://app1.vnrzone.site/", icon: "📁" },
+    { name: "App Two", url: "https://app2.vnrzone.site/", icon: "📊" },
 ];
 
 const SuperAppContent = () => {
@@ -10,22 +11,23 @@ const SuperAppContent = () => {
     const [activeApp, setActiveApp] = useState(null);
 
     useEffect(() => {
-        // Load user from localStorage
-        const storedUser = localStorage.getItem("user");
+        // ✅ Load user from cookies instead of localStorage
+        const storedUser = Cookies.get("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem("userToken");
-        localStorage.removeItem("user");
-        setUser(null);
+        Cookies.remove("userToken", { domain: ".vnrzone.site" });
+        Cookies.remove("user", { domain: ".vnrzone.site" });
+        setUser(null); // ✅ Clear user state
         window.location.reload();
     };
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>
+            {/* ✅ Header Section */}
             <header style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "#007bff", color: "white", width: "100%", boxSizing: "border-box" }}>
                 <h2>SuperApp</h2>
                 <div>
@@ -52,6 +54,7 @@ const SuperAppContent = () => {
                 </div>
             </header>
 
+            {/* ✅ App Selection Grid / Embedded App View */}
             {activeApp === null ? (
                 <div style={{ 
                     display: "grid", 
@@ -65,7 +68,12 @@ const SuperAppContent = () => {
                     boxSizing: "border-box"
                 }}>
                     {APPS.map((app) => (
-                        <div key={app.url} 
+                        <div 
+                            key={app.url} 
+                            role="button" 
+                            tabIndex="0" 
+                            onClick={() => setActiveApp(app.url)}
+                            onKeyPress={(e) => e.key === "Enter" && setActiveApp(app.url)} // ✅ Keyboard accessibility
                             style={{ 
                                 cursor: "pointer", 
                                 padding: "20px", 
@@ -81,7 +89,7 @@ const SuperAppContent = () => {
                                 width: "100%",
                                 boxSizing: "border-box"
                             }} 
-                            onClick={() => setActiveApp(app.url)}>
+                        >
                             <div style={{ fontSize: "40px" }}>{app.icon}</div>
                             <p style={{ fontSize: "14px", marginTop: "10px" }}>{app.name}</p>
                         </div>

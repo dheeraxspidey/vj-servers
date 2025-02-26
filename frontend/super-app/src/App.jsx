@@ -1,28 +1,24 @@
 import React, { useState, useEffect } from "react";
 import Login from "./Login";
 import SuperAppContent from "./SuperAppContent";
+import Cookies from "js-cookie";
 
 const App = () => {
-  const [user, setUser] = useState(null);
+    const [user, setUser] = useState(null);
 
-  
-  // ✅ Load user from localStorage when the app starts
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser)); // Parse and set the user
-    }
-  }, []);
+    useEffect(() => {
+        // ✅ Load user from cookies
+        const storedUser = Cookies.get("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
 
-  return (
-    <div>
-      {!user ? (
-        <Login onLoginSuccess={setUser} />
-      ) : (
-        <SuperAppContent user={user} />
-      )}
-    </div>
-  ); 
+    return (
+        <div>
+            {!user ? <Login onLoginSuccess={setUser} /> : <SuperAppContent user={user} />}
+        </div>
+    );
 };
 
 export default App;
