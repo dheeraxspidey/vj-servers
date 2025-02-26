@@ -16,7 +16,7 @@ const App = () => {
 
     return (
         <div>
-            {!user ? <Login onLoginSuccess={setUser} /> : <SuperAppContent user={user} />}
+            <SuperAppContent user={user} />
         </div>
     );
 };

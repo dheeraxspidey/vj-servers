@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import Login from "./Login"; // ✅ Import Login component
 
 const APPS = [
     { name: "App One", url: "https://app1.vnrzone.site/", icon: "📁" },
@@ -9,9 +10,10 @@ const APPS = [
 const SuperAppContent = () => {
     const [user, setUser] = useState(null);
     const [activeApp, setActiveApp] = useState(null);
+    const [showLogin, setShowLogin] = useState(false); // ✅ Track if login button was clicked
 
     useEffect(() => {
-        // ✅ Load user from cookies instead of localStorage
+        // ✅ Load user from cookies instead of forcing login
         const storedUser = Cookies.get("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
@@ -49,7 +51,7 @@ const SuperAppContent = () => {
                             </button>
                         </>
                     ) : (
-                        <p>Login to Continue</p>
+                        <Login onLoginSuccess={setUser} /> // ✅ Show Google Login Popup
                     )}
                 </div>
             </header>
@@ -73,7 +75,7 @@ const SuperAppContent = () => {
                             role="button" 
                             tabIndex="0" 
                             onClick={() => setActiveApp(app.url)}
-                            onKeyPress={(e) => e.key === "Enter" && setActiveApp(app.url)} // ✅ Keyboard accessibility
+                            onKeyPress={(e) => e.key === "Enter" && setActiveApp(app.url)}
                             style={{ 
                                 cursor: "pointer", 
                                 padding: "20px", 

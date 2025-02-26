@@ -20,9 +20,11 @@ const App = () => {
         <div style={{ textAlign: "center", marginTop: "20px" }}>
             {user ? (
                 <>
-                    <h1>Hello {user.name}, Welcome to {appName}</h1>
+                    <h1>Welcome to {appName}</h1>
+                    <h3> User details available for you</h3>
                     <img src={user.picture} alt="User Profile" width="80" style={{ borderRadius: "50%" }} />
                     <p>Email: {user.email}</p>
+                    <p>Email: {user.name}</p>
                 </>
             ) : (
                 <h1>Loading...</h1>
