@@ -13,7 +13,7 @@ const App = () => {
         <Dashboard user={user} />
       )}
     </div>
-  );
+  ); 
 };
 
 export default App;
