@@ -4,6 +4,10 @@ from authlib.integrations.flask_client import OAuth
 from flask_session import Session
 import logging
 
+import os
+from dotenv import load_dotenv
+
+
 app = Flask(__name__)
 
 from flask_session import Session
@@ -28,6 +32,13 @@ Session(app)
 # ✅ OAuth Configuration
 GOOGLE_CLIENT_ID = ""
 GOOGLE_CLIENT_SECRET = ""
+
+
+# ✅ Load environment variables
+load_dotenv()
+
+app.config["GOOGLE_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
+app.config["GOOGLE_CLIENT_SECRET"] = os.getenv("GOOGLE_CLIENT_SECRET")
 
 
 oauth = OAuth(app)
