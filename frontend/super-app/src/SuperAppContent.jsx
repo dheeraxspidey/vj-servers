@@ -1,17 +1,28 @@
-import React, { useState, useContext } from "react";
-import { AuthProvider, AuthContext } from "../../vj-sso-fe/src/context/AuthContext";
+import React, { useState, useEffect } from "react";
 
 const APPS = [
     { name: "App One", url: "http://localhost:5174/", icon: "📁" },
     { name: "App Two", url: "http://localhost:5173/", icon: "📊" },
 ];
 
-
 const SuperAppContent = () => {
-    const { user, logout, loading } = useContext(AuthContext);
+    const [user, setUser] = useState(null);
     const [activeApp, setActiveApp] = useState(null);
 
-    if (loading) return <p>Loading...</p>;
+    useEffect(() => {
+        // Load user from localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("user");
+        setUser(null);
+        window.location.reload();
+    };
 
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>
@@ -20,9 +31,9 @@ const SuperAppContent = () => {
                 <div>
                     {user ? (
                         <>
-                            <span>👤 {user}</span>
+                            <span>👤 {user.name}</span>
                             <button
-                                onClick={logout}
+                                onClick={handleLogout}
                                 style={{
                                     marginLeft: "10px",
                                     background: "#ff4d4d",
@@ -36,7 +47,7 @@ const SuperAppContent = () => {
                             </button>
                         </>
                     ) : (
-                        <a href={`http://sso.vnrzone.site/login?redirect=${encodeURIComponent(window.location.href)}`} style={{ color: "white", textDecoration: "none" }}>Login</a>
+                        <p>Login to Continue</p>
                     )}
                 </div>
             </header>
@@ -89,12 +100,4 @@ const SuperAppContent = () => {
     );
 };
 
-const SuperApp = () => {
-    return (
-        <AuthProvider>
-            <SuperAppContent />
-        </AuthProvider>
-    );
-};
-
-export default SuperApp;
+export default SuperAppContent;

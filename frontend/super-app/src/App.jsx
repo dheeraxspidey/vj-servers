@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Login from "./Login";
-import Dashboard from "./Dashboard"; // Create a dashboard component
+import SuperAppContent from "./SuperAppContent";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -10,7 +10,7 @@ const App = () => {
       {!user ? (
         <Login onLoginSuccess={setUser} />
       ) : (
-        <Dashboard user={user} />
+        <SuperAppContent user={user} />
       )}
     </div>
   ); 
