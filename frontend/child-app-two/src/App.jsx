@@ -1,38 +1,39 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import Cookies from "js-cookie";
 
-const API_URL = "http://localhost:5000/api/check-login";  // ✅ Flask SSO API
-
-const App = ({ appName }) => {
+const App = () => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [showMessage, setShowMessage] = useState(false);
 
     useEffect(() => {
-        axios.get(API_URL, { withCredentials: true })
-            .then((response) => {
-                if (response.data.logged_in) {
-                    setUser(response.data.user);
-                } else {
-                    setUser(null); // Explicitly set user to null if not authenticated
-                }
-            })
-            .catch(() => setUser(null))
-            .finally(() => setLoading(false));
+        // ✅ Load user from cookies
+        const storedUser = Cookies.get("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        } else {
+            // ✅ Show message for 3 seconds, then redirect to login
+            setShowMessage(true);
+            setTimeout(() => {
+                window.location.href = "https://superapp.vnrzone.site/";
+            }, 3000);
+        }
     }, []);
 
-    useEffect(() => {
-        if (!loading && !user) {
-            window.location.href = `http://localhost:5173/login?redirect=${window.location.href}`;  // ✅ Redirect to common login
-        }
-    }, [user, loading]);
-
-    if (loading) return <p>Loading...</p>;
-
-    return user ? (
-        <div>
-            <h1>Hello {user}, Welcome to {appName}</h1>
+    return (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+            {user ? (
+                <>
+                    <h1>Welcome to App Two</h1>
+                    <img src={user.picture} alt="User Profile" width="80" style={{ borderRadius: "50%" }} />
+                    <p>Email: {user.email}</p>
+                    <p>Name: {user.name}</p>
+                </>
+            ) : showMessage ? (
+                // ✅ Show message before redirecting
+                <h2>🚀 Login required! Redirecting to SuperApp...</h2>
+            ) : null}
         </div>
-    ) : null;  // ✅ Prevent rendering when user is null
+    );
 };
 
 export default App;

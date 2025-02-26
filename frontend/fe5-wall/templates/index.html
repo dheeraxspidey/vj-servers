@@ -68,14 +68,19 @@
             background: white;
             width: 90%;
             max-width: 350px;
+            height: 350px;  /* Force a fixed height */
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             padding: 15px;
             text-align: left;
-            position: relative; /* For status positioning */
+            position: relative;
             transition: transform 0.2s;
             overflow-wrap: anywhere;
+
+            /* If there's more content than 350px allows, show a scrollbar */
+            overflow-y: auto;
         }
+
 
         .card:hover {
             transform: scale(1.03);

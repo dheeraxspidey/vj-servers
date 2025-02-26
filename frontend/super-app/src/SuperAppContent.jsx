@@ -5,6 +5,7 @@ import Login from "./Login"; // ✅ Import Login component
 const APPS = [
     { name: "App One", url: "https://app1.vnrzone.site/", icon: "📁" },
     { name: "App Two", url: "https://app2.vnrzone.site/", icon: "📊" },
+    { name: "App Three", url: "https://app1.vnrzone.site/", icon: "📊" },
 ];
 
 const SuperAppContent = () => {
@@ -31,7 +32,13 @@ const SuperAppContent = () => {
         <div style={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>
             {/* ✅ Header Section */}
             <header style={{ display: "flex", justifyContent: "space-between", padding: "10px", background: "#007bff", color: "white", width: "100%", boxSizing: "border-box" }}>
-                <h2>SuperApp</h2>
+            <h2 
+                onClick={() => window.location.reload()} 
+                style={{ cursor: "pointer" }}
+            >
+                SuperApp
+            </h2>
+
                 <div>
                     {user ? (
                         <>

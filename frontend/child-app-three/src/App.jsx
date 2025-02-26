@@ -1,38 +1,44 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import Cookies from "js-cookie";
 
-const API_URL = "http://localhost:5000/api/check-login";  // ✅ Flask SSO API
-
-const App = ({ appName }) => {
+const App = () => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [isInIframe, setIsInIframe] = useState(window.self !== window.top);
 
     useEffect(() => {
-        axios.get(API_URL, { withCredentials: true })
-            .then((response) => {
-                if (response.data.logged_in) {
-                    setUser(response.data.user);
-                } else {
-                    setUser(null); // Explicitly set user to null if not authenticated
-                }
-            })
-            .catch(() => setUser(null))
-            .finally(() => setLoading(false));
+        // ✅ Load user from cookies
+        const storedUser = Cookies.get("user");
+
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+
+            // ✅ Send a message to SuperApp to refresh iFrame
+            if (isInIframe) {
+                console.log("Notifying SuperApp to refresh iFrame...");
+                window.parent.postMessage({ action: "refreshIframe" }, "*");
+            } else {
+                console.log("Refreshing full page...");
+                window.location.reload(); // ✅ Refresh the entire page if opened directly
+            }
+        }
     }, []);
 
-    useEffect(() => {
-        if (!loading && !user) {
-            window.location.href = `http://localhost:5173/login?redirect=${window.location.href}`;  // ✅ Redirect to common login
-        }
-    }, [user, loading]);
-
-    if (loading) return <p>Loading...</p>;
-
-    return user ? (
-        <div>
-            <h1>Hello {user}, Welcome to {appName}</h1>
+    return (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+            {user ? (
+                <>
+                    <h1>Welcome {user.name}, to App One</h1>
+                    <img src={user.picture} alt="User Profile" width="80" style={{ borderRadius: "50%" }} />
+                    <p>Email: {user.email}</p>
+                    {isInIframe && <p>📌 You are viewing this inside SuperApp</p>}
+                </>
+            ) : isInIframe ? (
+                <h2>🛑 Please log in from SuperApp</h2>
+            ) : (
+                <h2>🚀 Login required! Redirecting to SuperApp...</h2>
+            )}
         </div>
-    ) : null;  // ✅ Prevent rendering when user is null
+    );
 };
 
 export default App;
