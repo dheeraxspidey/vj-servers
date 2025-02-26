@@ -2,10 +2,28 @@ import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import Login from "./Login"; // ✅ Import Login component
 
+
+// SuperApp	🏫	Campus
+// VJ Bus	🚌	Bus Tracking
+// Fake News Check	📰	Fake News Detection
+// Nitro	⚡	Activity & Speed
+// stacKmaps	🗺️	Navigation
+// Expresso	💡	Doubt Solving
+// DevCore	💻	Developer Hub
+// easyfind	🔎	Search & Discovery
+// easyfind-admin	🛠️	Admin Panel for Search
+// Innovators	🏛️	Hall Booking & Events
+// Spartans	🛡️	Complaints & Security
+// WEBX	📊	Project Management
+// Hello	🔗	Networking & Social
+
 const APPS = [
     { name: "App One", url: "https://app1.vnrzone.site/", icon: "📁" },
     { name: "App Two", url: "https://app2.vnrzone.site/", icon: "📊" },
-    { name: "App Three", url: "https://app1.vnrzone.site/", icon: "📊" },
+    { name: "App Three", url: "https://app1.vnrzone.site/", icon: "🛠️" },
+    { name: "VJ Bus", url: "https://bus.vnrzone.site/", icon: "🚌" },
+    { name: "Fake News Check", url: "https://wall.vnrzone.site/", icon: "📰" },
+
 ];
 
 const SuperAppContent = () => {
