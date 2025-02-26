@@ -3,7 +3,7 @@ import Cookies from "js-cookie";
 
 const App = () => {
     const [user, setUser] = useState(null);
-    const appName = "App One"; // Change this for app2, app3
+    const [showMessage, setShowMessage] = useState(false);
 
     useEffect(() => {
         // ✅ Load user from cookies
@@ -11,8 +11,11 @@ const App = () => {
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         } else {
-            // ✅ Redirect to Google OAuth Login if user is not found
-            window.location.href = `https://superapp.vnrzone.site/auth/google`;
+            // ✅ Show message for 3 seconds, then redirect to login
+            setShowMessage(true);
+            setTimeout(() => {
+                window.location.href = "https://superapp.vnrzone.site/";
+            }, 3000);
         }
     }, []);
 
@@ -20,15 +23,15 @@ const App = () => {
         <div style={{ textAlign: "center", marginTop: "20px" }}>
             {user ? (
                 <>
-                    <h1>Welcome to {appName}</h1>
-                    <h3> User details available for you</h3>
+                    <h1>Welcome to App One</h1>
                     <img src={user.picture} alt="User Profile" width="80" style={{ borderRadius: "50%" }} />
                     <p>Email: {user.email}</p>
-                    <p>Email: {user.name}</p>
+                    <p>Name: {user.name}</p>
                 </>
-            ) : (
-                <h1>Loading...</h1>
-            )}
+            ) : showMessage ? (
+                // ✅ Show message before redirecting
+                <h2>🚀 Login required! Redirecting to SuperApp...</h2>
+            ) : null}
         </div>
     );
 };
