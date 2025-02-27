@@ -55,13 +55,10 @@ userApp.get("/auth/github/callback", async (req, res) => {
 userApp.post(
   "/add-complaint",
   asyncHandler(async (req, res) => {
- 
-
     const { complaint_id, title, description, category, user_id, github_issue } = req.body;
 
     // Validate required fields
     if (!complaint_id || !title || !description || !category || !user_id) {
-      
       return res.status(400).json({
         message: "Complaint ID, title, description, category, and user ID are required",
       });
@@ -73,14 +70,14 @@ userApp.post(
       description,
       category,
       user_id,
-      github_issue: github_issue || null, // Added github_issue (default to null if not provided)
+      github_issue: github_issue || null, // Default to null if not provided
       timestamp: new Date().toISOString(),
       likes: 0,
       dislikes: 0,
       status: "Pending",
       comments: [],
       flagged: false,
-      votedUsers: {} // Initialize empty object to track user votes
+      votedUsers: [] // ✅ Initialize as an empty array
     };
 
     try {
@@ -92,11 +89,11 @@ userApp.post(
         res.status(500).json({ message: "Failed to add complaint" });
       }
     } catch (error) {
-      
       res.status(500).json({ message: "Database error" });
     }
   })
 );
+
 
 
   
@@ -141,12 +138,13 @@ userApp.get("/my-complaints/:user_id", asyncHandler(async (req, res) => {
 
 
 // POST API to like a complaint
-
-
-// POST API to like a complaint
 userApp.post("/like-complaint/:complaint_id", authenticateUser, asyncHandler(async (req, res) => {
   const { complaint_id } = req.params;
-  const userId = req.user.id; // Extracted from JWT
+  const { email } = req.body;
+
+  if (!email) {
+      return res.status(400).json({ message: "User email is required" });
+  }
 
   const complaint = await complaintsCollectionObj.findOne({ complaint_id });
 
@@ -154,39 +152,45 @@ userApp.post("/like-complaint/:complaint_id", authenticateUser, asyncHandler(asy
       return res.status(404).json({ message: "Complaint not found" });
   }
 
-  // Check if user already voted
-  if (complaint.votedUsers && complaint.votedUsers[userId] === "upvote") {
-      return res.status(400).json({ message: "You have already liked this complaint" });
-  }
+  let votedUsers = Array.isArray(complaint.votedUsers) ? complaint.votedUsers : [];
+
+  // Find if user already voted
+  const existingVoteIndex = votedUsers.findIndex(user => user.email === email);
 
   let updateQuery = {};
 
-  if (complaint.votedUsers && complaint.votedUsers[userId] === "downvote") {
-      // User previously disliked, switch to like
-      updateQuery = {
-          $inc: { likes: 1, dislikes: -1 },
-          $set: { [`votedUsers.${userId}`]: "upvote" }
-      };
+  if (existingVoteIndex !== -1) {
+      if (votedUsers[existingVoteIndex].vote === "upvote") {
+          return res.status(200).json({ message: "You have already liked this complaint" });
+      } else {
+          // Change from dislike to like
+          updateQuery = {
+              $inc: { likes: 1, dislikes: -1 },
+              $set: { [`votedUsers.${existingVoteIndex}.vote`]: "upvote" }
+          };
+      }
   } else {
-      // User is liking for the first time
+      // First-time like
       updateQuery = {
           $inc: { likes: 1 },
-          $set: { [`votedUsers.${userId}`]: "upvote" }
+          $push: { votedUsers: { email, vote: "upvote" } }
       };
   }
 
-  const result = await complaintsCollectionObj.updateOne(
-      { complaint_id },
-      updateQuery
-  );
+  await complaintsCollectionObj.updateOne({ complaint_id }, updateQuery);
 
   res.status(200).json({ message: "Complaint liked successfully" });
 }));
 
+
 // POST API to dislike a complaint
 userApp.post("/dislike-complaint/:complaint_id", authenticateUser, asyncHandler(async (req, res) => {
   const { complaint_id } = req.params;
-  const userId = req.user.id; // Extracted from JWT
+  const { email } = req.body;
+
+  if (!email) {
+      return res.status(400).json({ message: "User email is required" });
+  }
 
   const complaint = await complaintsCollectionObj.findOne({ complaint_id });
 
@@ -194,34 +198,40 @@ userApp.post("/dislike-complaint/:complaint_id", authenticateUser, asyncHandler(
       return res.status(404).json({ message: "Complaint not found" });
   }
 
-  // Check if user already voted
-  if (complaint.votedUsers && complaint.votedUsers[userId] === "downvote") {
-      return res.status(400).json({ message: "You have already disliked this complaint" });
-  }
+  let votedUsers = Array.isArray(complaint.votedUsers) ? complaint.votedUsers : [];
+
+  // Find if user already voted
+  const existingVoteIndex = votedUsers.findIndex(user => user.email === email);
 
   let updateQuery = {};
 
-  if (complaint.votedUsers && complaint.votedUsers[userId] === "upvote") {
-      // User previously liked, switch to dislike
-      updateQuery = {
-          $inc: { likes: -1, dislikes: 1 },
-          $set: { [`votedUsers.${userId}`]: "downvote" }
-      };
+  if (existingVoteIndex !== -1) {
+      if (votedUsers[existingVoteIndex].vote === "downvote") {
+          return res.status(200).json({ message: "You have already disliked this complaint" });
+      } else {
+          // Change from like to dislike
+          updateQuery = {
+              $inc: { likes: -1, dislikes: 1 },
+              $set: { [`votedUsers.${existingVoteIndex}.vote`]: "downvote" }
+          };
+      }
   } else {
-      // User is disliking for the first time
+      // First-time dislike
       updateQuery = {
           $inc: { dislikes: 1 },
-          $set: { [`votedUsers.${userId}`]: "downvote" }
+          $push: { votedUsers: { email, vote: "downvote" } }
       };
   }
 
-  const result = await complaintsCollectionObj.updateOne(
-      { complaint_id },
-      updateQuery
-  );
+  await complaintsCollectionObj.updateOne({ complaint_id }, updateQuery);
 
   res.status(200).json({ message: "Complaint disliked successfully" });
 }));
+
+
+
+
+
 
 // Helper function to get the start and end of the week or month
 function getDateRange(dateRange) {

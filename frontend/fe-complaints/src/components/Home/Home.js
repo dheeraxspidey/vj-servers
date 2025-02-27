@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Timer, CheckCircle2, ThumbsUp, ThumbsDown, Search, Calendar, MessageCircle,Clock,ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Timer,
+  CheckCircle2,
+  ThumbsUp,
+  ThumbsDown,
+  Search,
+  Calendar,
+  Link as LinkIcon,
+} from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../../Context/AuthContext";
 import "./Home.css";
@@ -14,7 +22,7 @@ const CATEGORIES = [
   "Fee Payment",
   "Hostel and Accommodation",
   "Extracurricular and Events",
-  "Others"
+  "Others",
 ];
 const STATUSES = ["Pending", "Ongoing", "Resolved"];
 
@@ -27,7 +35,6 @@ const Home = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
   const [complaints, setComplaints] = useState([]);
-  const [expanded, setExpanded] = useState({}); // Track which complaint updates are visible
   const baseUrl = process.env.REACT_APP_COMPLAINTS_APP_BE_URL;
 
   useEffect(() => {
@@ -38,11 +45,17 @@ const Home = () => {
     try {
       const url = `${baseUrl}/user-api/filter-complaints?category=${categoryFilter}&status=${statusFilter}`;
       const response = await axios.get(url);
-      if (response.data && Array.isArray(response.data.complaints)) {
-        setComplaints(response.data.complaints);
-      } else {
-        setComplaints([]);
-      }
+      const data = response.data?.complaints || [];
+      setComplaints(data);
+      
+      const votes = {};
+      data.forEach((complaint) => {
+        if (Array.isArray(complaint.votedUsers)) {
+          const userVote = complaint.votedUsers.find((v) => v.email === user?.email);
+          if (userVote) votes[complaint.complaint_id] = userVote.type;
+        }
+      });
+      setUserVotes(votes);
     } catch (error) {
       console.error("Error fetching complaints:", error);
       setComplaints([]);
@@ -50,63 +63,14 @@ const Home = () => {
   };
 
   const handleVote = async (id, type) => {
-    if (!token) {
-      alert("Please log in to vote.");
-      return;
-    }
-
+    if (!token) return alert("Please log in to vote.");
+    if (userVotes[id] === type) return; // Prevent duplicate voting
+    
     try {
       const url = `${baseUrl}/user-api/${type === "upvote" ? "like" : "dislike"}-complaint/${id}`;
-      await axios.post(
-        url,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setComplaints((prevComplaints) =>
-        prevComplaints.map((complaint) => {
-          if (complaint.complaint_id === id) {
-            const currentVote = userVotes[id];
-            let newLikes = complaint.likes;
-            let newDislikes = complaint.dislikes;
-
-            if (currentVote === "upvote" && type === "downvote") {
-              newLikes -= 1;
-              newDislikes += 1;
-            } else if (currentVote === "downvote" && type === "upvote") {
-              newLikes += 1;
-              newDislikes -= 1;
-            } else if (!currentVote) {
-              if (type === "upvote") newLikes += 1;
-              else newDislikes += 1;
-            } else if (currentVote === type) {
-              if (type === "upvote") newLikes -= 1;
-              else newDislikes -= 1;
-            }
-
-            return {
-              ...complaint,
-              likes: newLikes,
-              dislikes: newDislikes,
-            };
-          }
-          return complaint;
-        })
-      );
-
-      setUserVotes((prevVotes) => {
-        const currentVote = prevVotes[id];
-        if (currentVote === type) {
-          const { [id]: _, ...rest } = prevVotes;
-          return rest;
-        } else {
-          return { ...prevVotes, [id]: type };
-        }
-      });
+      await axios.post(url, { email: user?.email }, { headers: { Authorization: `Bearer ${token}` } });
+      setUserVotes((prevVotes) => ({ ...prevVotes, [id]: type })); // Update state immediately
+      fetchComplaints();
     } catch (error) {
       console.error("Error updating vote:", error.response?.data || error.message);
     }
@@ -114,8 +78,7 @@ const Home = () => {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "Unknown Date";
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
+    return new Date(timestamp).toLocaleString("en-US", {
       weekday: "short",
       year: "numeric",
       month: "short",
@@ -124,17 +87,6 @@ const Home = () => {
       minute: "2-digit",
     });
   };
-
-  const toggleUpdates = (id) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const filteredComplaints = complaints.filter((complaint) => {
-    const matchesSearch = search ? complaint.title.toLowerCase().includes(search.toLowerCase()) : true;
-    const matchesCategory = categoryFilter ? complaint.category === categoryFilter : true;
-    const matchesStatus = statusFilter ? complaint.status === statusFilter : true;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
 
   return (
     <div className="home-container-page">
@@ -150,39 +102,25 @@ const Home = () => {
               className="search-input"
             />
           </div>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="filter-select"
-          >
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="filter-select">
             <option value="">All Categories</option>
             {CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
+              <option key={category} value={category}>{category}</option>
             ))}
           </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="filter-select"
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
             <option value="">All Status</option>
             {STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
+              <option key={status} value={status}>{status}</option>
             ))}
           </select>
         </div>
 
         <div className="complaints-list container">
-          {filteredComplaints.length === 0 ? (
-            <div className="no-complaints">
-              <p>No complaints found.</p>
-            </div>
+          {complaints.length === 0 ? (
+            <p>No complaints found.</p>
           ) : (
-            filteredComplaints.map((complaint) => (
+            complaints.map((complaint) => (
               <div key={complaint.complaint_id} className="complaint-card">
                 <div className="card-header">
                   <div className="date-info">
@@ -193,7 +131,6 @@ const Home = () => {
                     <button
                       className={`vote-btn upvote ${userVotes[complaint.complaint_id] === "upvote" ? "voted" : ""}`}
                       onClick={() => handleVote(complaint.complaint_id, "upvote")}
-                      aria-label="Upvote"
                     >
                       <ThumbsUp size={20} />
                       <span className="vote-count">{complaint.likes}</span>
@@ -201,7 +138,6 @@ const Home = () => {
                     <button
                       className={`vote-btn downvote ${userVotes[complaint.complaint_id] === "downvote" ? "voted" : ""}`}
                       onClick={() => handleVote(complaint.complaint_id, "downvote")}
-                      aria-label="Downvote"
                     >
                       <ThumbsDown size={20} />
                       <span className="vote-count">{complaint.dislikes}</span>
@@ -211,51 +147,24 @@ const Home = () => {
                 <div className="card-content">
                   <h4>{complaint.title}</h4>
                   <p>{complaint.description}</p>
+                  {complaint.github_issue && (
+                    <a href={complaint.github_issue} target="_blank" rel="noopener noreferrer" className="github-link">
+                      <LinkIcon size={18} /> View GitHub Issue
+                    </a>
+                  )}
                   <div className="card-footer">
                     <span className="category-tag">{complaint.category}</span>
                     <span className={`status-badge ${complaint.status.toLowerCase()}`}>
-                      {complaint.status === "Resolved" ? (
-                        <CheckCircle2 className="status-icon" size={18} />
-                      ) : (
-                        <Timer className="status-icon" size={18} />
-                      )}
+                      {complaint.status === "Resolved" ? <CheckCircle2 size={18} /> : <Timer size={18} />}
                       {complaint.status}
                     </span>
                   </div>
-
-                  {/* Admin Updates Section */}
-                  <button
-                    className="admin-updates-btn"
-                    onClick={() => toggleUpdates(complaint.complaint_id)}
-                  >
-                    🛠 Admin Updates {expanded[complaint.complaint_id] ? <ChevronUp /> : <ChevronDown />}
-                  </button>
-
-                  {expanded[complaint.complaint_id] && (
-                    <div className="admin-updates-section">
-                      {complaint.comments && complaint.comments.length > 0 ? (
-                        complaint.comments.map((comment) => (
-                          <div key={comment.id} className="admin-update">
-                            <p className="update-text">{comment.text}</p>
-                            <span className="update-time">
-                              <Clock  /> {formatDate(comment.date)}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="no-updates">No updates available</p>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             ))
           )}
         </div>
-
-        <button className="add-complaint-btn" onClick={() => navigate("/complaint-form")}>
-          ➕ Add Complaint
-        </button>
+        <button className="add-complaint-btn" onClick={() => navigate("/complaint-form")}>➕ Add Complaint</button>
       </div>
     </div>
   );
