@@ -187,18 +187,38 @@ const RoomPage = ({ role }) => {
     navigate('/');
   };
 
+  // const handleDoubtChange = (e) => {
+  //   const newDoubtText = e.target.value;
+  //   setNewDoubt(newDoubtText);
+
+  //   if (newDoubtText.trim() === '') {
+  //     setSimilarity(0);
+  //     return;
+  //   }
+
+  //   const existingDoubtTexts = doubts.map(doubt => doubt.text);
+  //   const bestMatch = stringSimilarity.findBestMatch(newDoubtText, existingDoubtTexts);
+  //   setSimilarity(bestMatch.bestMatch.rating * 100);
+  // };
   const handleDoubtChange = (e) => {
     const newDoubtText = e.target.value;
     setNewDoubt(newDoubtText);
-
+  
     if (newDoubtText.trim() === '') {
       setSimilarity(0);
       return;
     }
-
+  
+    // Ensure existingDoubtTexts is an array of strings
     const existingDoubtTexts = doubts.map(doubt => doubt.text);
-    const bestMatch = stringSimilarity.findBestMatch(newDoubtText, existingDoubtTexts);
-    setSimilarity(bestMatch.bestMatch.rating * 100);
+  
+    // Check if existingDoubtTexts is not empty
+    if (existingDoubtTexts.length > 0) {
+      const bestMatch = stringSimilarity.findBestMatch(newDoubtText, existingDoubtTexts);
+      setSimilarity(bestMatch.bestMatch.rating * 100);
+    } else {
+      setSimilarity(0);
+    }
   };
 
   // Sort doubts by upvotes and then by creation time
