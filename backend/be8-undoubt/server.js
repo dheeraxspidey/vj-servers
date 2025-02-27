@@ -11,7 +11,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.VITE_FRONTEND_URL, // Specify the allowed origin
+    origin: [process.env.VITE_FRONTEND_URL, "http://10.45.8.186:3108", "http://10.45.8.186:3108"], // Specify the allowed origin
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow DELETE method
     credentials: true, // Allow credentials
   },
