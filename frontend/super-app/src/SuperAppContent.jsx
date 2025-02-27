@@ -123,8 +123,10 @@ const SuperAppContent = () => {
                     ))}
                 </div>
             ) : (
+                // To Avoid iframe caching : add a random query parameter. But it increases load on server
+                // src={`${activeApp}?cache=${Date.now()}`}
                 <iframe
-                    src={activeApp}
+                    src={`${activeApp}?cache=1}`}
                     title="Embedded App"
                     width="100%"
                     height="100%"
