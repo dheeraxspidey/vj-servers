@@ -1,0 +1,145 @@
+.navigation{
+    position: relative;
+
+}
+
+.display{
+    position: absolute;
+    border-radius: 100%;
+    top:58px;
+    width: 100%;
+    z-index:1000;
+    animation: mymove 0.5s infinite ease-in-out;
+    animation-iteration-count: 1;
+    animation-timing-function:ease-in-out;
+}
+
+.nav-link{
+    color: white;
+    position: relative;
+    overflow: hidden; /* Hide overflow */
+    text-decoration: none; /* Remove underline */
+    width: 100%;
+}
+
+.zoom-effect {
+    transition: transform 0.3s ease; /* Smooth transition */
+}
+
+.zoom-effect:hover {
+    transform: scale(1.1);
+    color: white;
+}
+
+.cross.rotated{
+    animation: rot1 0.5s ease;
+    
+   
+}
+
+@keyframes rot1 {
+    from {transform: rotate(0deg);}
+    to {transform: rotate(-90deg);}
+}
+
+@keyframes mymove {
+    from {right:-300px}
+    to {right:0px}
+  }
+
+/* @media (hover: none) {
+    .block:active {
+        height: 40px;
+        z-index: 1000;
+        color: white;
+    }
+
+    .nav-link:active::after {
+        left: 0; /* Trigger gradient on touch */
+    
+    
+ */
+
+
+
+
+.nav{
+    max-height: 120px;
+}
+
+.title{
+    list-style-type: none;
+}
+
+.max-w-screen-xl{
+    padding-bottom: 0;
+}
+
+.block{
+    
+    background-color: white;
+    position: relative; 
+    overflow: hidden;
+    border-radius: 5px;
+    border-collapse: collapse;
+}
+
+.block::after{
+    content: ''; 
+    position: absolute;
+    top: 0;
+    left: -100%;
+   height: 100%;
+   width: 100%;
+    transition: left 0.5s ease-in-out; 
+    z-index: -900; 
+}
+.block:hover::after {
+    left: 0;
+    color: white;
+}
+
+
+
+/* .cross{
+  transition: transform 0.5s ease;
+} */
+
+/* .text-white:hover{
+ background-color: black;
+   color: black;
+   
+} */
+
+/* .nav-link::after {
+    content: ''; 
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right,black,rgb(164, 162, 161)); 
+    
+    transition: left 0.5s ease-in-out;
+    z-index: -900; 
+} */
+
+
+/*.nav-link:hover::after {
+    left: 0; 
+    color: white;
+} 
+
+.nav-link:hover{
+
+  text-decoration: none;
+ z-index: 1000; 
+ color: white;
+
+}
+
+*/
+
+/* color: linear-gradient(to right,white,black); */
+/* 
+background: linear-gradient(to right,rgb(0, 0, 0),rgb(120, 119, 119));  */
