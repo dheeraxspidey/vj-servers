@@ -3,7 +3,7 @@ import Cookies from "js-cookie";
 
 const App = () => {
     const [user, setUser] = useState(null);
-    const [showMessage, setShowMessage] = useState(false);
+    const [isInIframe, setIsInIframe] = useState(window.self !== window.top);
 
     useEffect(() => {
         // ✅ Load user from cookies
@@ -11,11 +11,14 @@ const App = () => {
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         } else {
-            // ✅ Show message for 3 seconds, then redirect to login
-            setShowMessage(true);
-            setTimeout(() => {
-                window.location.href = "https://superapp.vnrzone.site/";
-            }, 3000);
+
+            // ✅ Show message for 5 seconds, then redirect to login
+            if (!isInIframe) {
+                console.log("Refreshing full page...");
+                setTimeout(() => {
+                    window.location.href = "https://superapp.vnrzone.site/";
+                }, 10000);                
+            }            
         }
     }, []);
 
@@ -28,10 +31,11 @@ const App = () => {
                     <p>Email: {user.email}</p>
                     <p>Name: {user.name}</p>
                 </>
-            ) : showMessage ? (
-                // ✅ Show message before redirecting
-                <h2>🚀 Login required! Redirecting to SuperApp...</h2>
-            ) : null}
+            ) :
+            (isInIframe ? 
+                (<div><h2>🛑 Please Sign in from SuperApp</h2><h3> then click on the 'SuperApp' to reload</h3></div>)
+                : (<div><h2>🚀 Login required! Please Signin from SuperApp and come back...</h2> <h3> Redirecting you to Super app </h3></div>)
+            )}
         </div>
     );
 };

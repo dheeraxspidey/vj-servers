@@ -23,7 +23,7 @@ const APPS = [
     { name: "App Three", url: "https://app1.vnrzone.site/", icon: "🛠️" },
     { name: "VJ Bus", url: "https://bus.vnrzone.site/", icon: "🚌" },
     { name: "Fake News Check", url: "https://wall.vnrzone.site/", icon: "📰" },
-
+    { name: "Flask Demo App", url: "https://flaskapp.vnrzone.site/", icon: "💻" },
 ];
 
 const SuperAppContent = () => {
