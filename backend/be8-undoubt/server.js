@@ -11,14 +11,14 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: 'http://10.45.8.186:3108', // Specify the allowed origin
+    origin: process.env.VITE_FRONTEND_URL, // Specify the allowed origin
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow DELETE method
     credentials: true, // Allow credentials
   },
 });
 
 app.use(cors({
-  origin: 'http://10.45.8.186:3108', // Specify the allowed origin
+  origin: process.env.VITE_FRONTEND_URL, // Specify the allowed origin
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow DELETE method
   credentials: true, // Allow credentials
 }));
@@ -40,5 +40,5 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 6040;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
