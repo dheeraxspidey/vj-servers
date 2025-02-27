@@ -5,10 +5,10 @@ from authlib.integrations.flask_client import OAuth
 from flask_session import Session
 from dotenv import load_dotenv
 
-# ✅ Load environment variables from .env
+# ✅ Load .env file
 load_dotenv()
 
-# ✅ Initialize Flask App
+# ✅ Initialize Flask app
 app = Flask(__name__)
 
 # ✅ Configure Logging
@@ -19,7 +19,7 @@ app.logger.setLevel(logging.DEBUG)
 app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config["SESSION_PERMANENT"] = True
-app.config["SESSION_FILE_DIR"] = "/tmp/flask_sessions"  # ✅ Persistent session storage
+app.config["SESSION_FILE_DIR"] = "/tmp/flask_sessions"  # ✅ Store sessions in a persistent directory
 
 Session(app)
 
@@ -35,7 +35,7 @@ if not app.config["GOOGLE_CLIENT_ID"] or not app.config["GOOGLE_CLIENT_SECRET"]:
 # ✅ Initialize OAuth
 oauth = OAuth(app)
 google = oauth.register(
-    name="google",
+    name='google',
     client_id=app.config["GOOGLE_CLIENT_ID"],
     client_secret=app.config["GOOGLE_CLIENT_SECRET"],
     authorize_url="https://accounts.google.com/o/oauth2/auth",
@@ -44,17 +44,11 @@ google = oauth.register(
     client_kwargs={"scope": "openid email profile"},
 )
 
-# ✅ Main Route (Auto-redirect logged-in users)
+# ✅ Auto-redirect logged-in users
 @app.route("/")
 def index():
     if "user" in session:
-        user_info = session["user"]
-        return f"""
-        <h1>Hello {user_info['name']}</h1>
-        <img src="{user_info['picture']}" width="80" style="border-radius:50%;" />
-        <p>Email: {user_info['email']}</p>
-        <a href="/logout">Logout</a>
-        """
+        return redirect("https://superapp.vnrzone.site/")  # ✅ Redirect if already logged in
     return """
     <h1>Flask Child App</h1>
     <a href='/login'>Login with Google</a>
@@ -91,7 +85,7 @@ def authorize():
         app.logger.debug(f"🔍 Received OAuth State: {received_state}")
         app.logger.debug(f"🔍 Expected OAuth State: {expected_state}")
 
-        # ✅ CSRF Check: Ensure state matches
+        # ✅ CSRF Check: Ensure state parameter matches
         if not expected_state:
             app.logger.error("❌ OAuth state missing in cookies! Possible session expiration.")
             return "Session state missing. Try logging in again.", 400
@@ -100,7 +94,7 @@ def authorize():
             app.logger.error(f"❌ CSRF Warning! Received state '{received_state}', but expected '{expected_state}'")
             return "CSRF Warning! State parameter mismatch.", 400
 
-        # ✅ Retrieve OAuth Token
+        # ✅ Attempt to retrieve OAuth Token
         app.logger.debug(f"🔍 Attempting OAuth Token Exchange with Google...")
         token = google.authorize_access_token()
         app.logger.debug(f"✅ OAuth Token Received: {token}")
@@ -120,13 +114,12 @@ def authorize():
         session["user"] = user_info
         session["user_token"] = token["access_token"]
 
-        # ✅ Display "Hello <Name>" Instead of Redirecting
-        return f"""
-        <h1>Hello {user_info['name']}</h1>
-        <img src="{user_info['picture']}" width="80" style="border-radius:50%;" />
-        <p>Email: {user_info['email']}</p>
-        <a href="/logout">Logout</a>
-        """
+        # ✅ Set authentication cookies for SuperApp
+        response = redirect("https://superapp.vnrzone.site/")
+        response.set_cookie("user", jsonify(user_info), domain=".vnrzone.site", httponly=True, secure=True)
+        response.set_cookie("userToken", token["access_token"], domain=".vnrzone.site", httponly=True, secure=True)
+
+        return response
 
     except Exception as e:
         app.logger.error(f"❌ Error during OAuth authorization: {str(e)}", exc_info=True)
@@ -136,9 +129,9 @@ def authorize():
 @app.route("/logout")
 def logout():
     session.pop("user", None)
-    response = redirect("/")
-    response.delete_cookie("user")
-    response.delete_cookie("userToken")
+    response = redirect("https://superapp.vnrzone.site/")
+    response.delete_cookie("user", domain=".vnrzone.site")
+    response.delete_cookie("userToken", domain=".vnrzone.site")
     return response
 
 # ✅ API to Get User Info

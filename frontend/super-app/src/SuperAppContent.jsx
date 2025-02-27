@@ -17,13 +17,15 @@ import Login from "./Login"; // ✅ Import Login component
 // WEBX	📊	Project Management
 // Hello	🔗	Networking & Social
 
+ 
 const APPS = [
-    { name: "App One", url: "https://app1.vnrzone.site/", icon: "📁" },
-    { name: "App Two", url: "https://app2.vnrzone.site/", icon: "📊" },
-    { name: "App Three", url: "https://app1.vnrzone.site/", icon: "🛠️" },
+    
     { name: "VJ Bus", url: "https://bus.vnrzone.site/", icon: "🚌" },
     { name: "Fake News Check", url: "https://wall.vnrzone.site/", icon: "📰" },
-    { name: "Flask Demo App", url: "https://flaskapp.vnrzone.site/", icon: "💻" },
+    { name: "Flask Demo App", url: "https://flaskapp.vnrzone.site/", icon: "🌐" },
+    { name: "App One", url: "https://app1.vnrzone.site/", icon: "1️⃣" },
+    { name: "App Two", url: "https://app2.vnrzone.site/", icon: "2️⃣" },
+    { name: "App Three", url: "https://app3.vnrzone.site/", icon: "3️⃣" },
 ];
 
 const SuperAppContent = () => {
@@ -54,7 +56,7 @@ const SuperAppContent = () => {
                 onClick={() => window.location.reload()} 
                 style={{ cursor: "pointer" }}
             >
-                SuperApp
+               🦸SuperApp 
             </h2>
 
                 <div>
@@ -138,3 +140,57 @@ const SuperAppContent = () => {
 };
 
 export default SuperAppContent;
+
+
+// 🚀 General Purpose Icons
+// 🏫 Campus
+// 🏠 Home
+// 🔍 Search
+// ⚡ Speed
+// 📊 Dashboard
+// 📁 Files
+// 🖥️ Computer
+// 📡 Network
+// 🏛️ Events & Hall Booking
+// 🎤 Podcast
+// 🛠️ Admin Panel
+// 📋 Tasks & To-Do
+// 🎯 Goals & Achievements
+// 🏆 Leaderboard
+// 📌 Pinned Items
+// 🚗 Travel & Maps
+// 🗺️ Navigation
+// 🚌 Bus Tracking
+// 🚗 Carpooling
+// 🚀 Fast Travel
+// 📍 Location Sharing
+// 📰 News & Media
+// 📰 Fake News Check
+// 🗣️ Discussions
+// 🎥 Live Streaming
+// 📢 Announcements
+// 🎧 Podcast Hub
+// 🛡️ Security & Complaints
+// 🛡️ Complaints & Security
+// 🔐 Privacy
+// 🏦 Banking & Transactions
+// 🔒 Lock & Authentication
+// 🧑‍⚖️ Legal & Compliance
+// 💡 Learning & Development
+// 💡 Doubt Solving
+// 📚 Library
+// ✍️ Assignments
+// 🏗️ Projects
+// 🎓 Education & Training
+// 💻 Developer & Tech
+// 💻 Developer Hub
+// 🖥️ Tech Support
+// 🎛️ Control Panel
+// 🔧 Tools & Utilities
+// 🌐 Web Development
+// 📌 Bonus: Numbers (1 to 5)
+// 1️⃣ One
+// 2️⃣ Two
+// 3️⃣ Three
+// 4️⃣ Four
+// 5️⃣ Five

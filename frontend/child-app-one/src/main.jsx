@@ -4,6 +4,6 @@ import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
-        <App appName="App One" />
+        <App appName="Campus DemoApp One" />
     </React.StrictMode>
 );

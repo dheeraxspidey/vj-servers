@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Cookies from "js-cookie";
 
-const App = () => {
+const App = ({ appName }) => {
     const [user, setUser] = useState(null);
     const [redirectCountdown, setRedirectCountdown] = useState(10);
     const isInIframe = useMemo(() => window.self !== window.top, []);
@@ -33,7 +33,8 @@ const App = () => {
         <div style={{ textAlign: "center", marginTop: "20px" }}>
             {user ? (
                 <>
-                    <h1>Welcome to App One</h1>
+                    <h1>Welcome to {appName}</h1>
+                    <h3>The app has access to below data to use</h3>
                     <img src={user.picture} alt="User Profile" width="80" style={{ borderRadius: "50%" }} />
                     <p>Email: {user.email}</p>
                     <p>Name: {user.name}</p>
