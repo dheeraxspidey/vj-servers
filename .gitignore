@@ -11,3 +11,4 @@ package-lock.json
 
 dist
 dist-ssr
+backend/be4-vjbus/database.db

@@ -32,7 +32,12 @@ th {
     color: white;
 }
 #logout {
+    cursor: pointer;
     background: red;
+    color: white;
+}
+#logout:hover {
+    background: darkred;
     color: white;
 }
 .hidden {

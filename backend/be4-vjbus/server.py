@@ -67,21 +67,34 @@ def handle_tracking_status(data):
         socketio.emit("tracking_status", {"route_id": route_id, "status": status})
 
 def is_in_college(lon, lat):
-    COLLEGE = (17.5500823, 78.3948765)
-    return geodesic(COLLEGE, (lat, lon)).meters <= 100
+    COLLEGE = (17.5479048, 78.394546)
+    print(COLLEGE)
+    print(geodesic(COLLEGE, (lat, lon)).meters)
+    return geodesic(COLLEGE, (lat, lon)).meters <= 150
 
 def log_data(route_id):
     try:
+
         conn = sqlite3.connect("database.db", check_same_thread=False)
         cursor = conn.cursor()
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        current_time = datetime.now().strftime("%H:%M:%S")
+
+        # Step 1: Check if the bus is already logged today
         cursor.execute("""
-            INSERT INTO logs (route_id, log_date, log_time)
-            SELECT ?, ?, ? WHERE NOT EXISTS (
-                SELECT 1 FROM logs WHERE route_id=? AND log_date=?
-            )
-        """, (route_id, datetime.now().strftime("%Y-%m-%d"), datetime.now().strftime("%H:%M:%S"), route_id, datetime.now().strftime("%Y-%m-%d")))
-        conn.commit()
-        conn.close()
+            SELECT 1 FROM logs WHERE route_number = ? AND log_date = ?
+        """, (route_id, current_date))
+
+        exists = cursor.fetchone()  # Fetch result (None if not found)
+
+        # Step 2: If not logged, insert the new log
+        if not exists:
+            cursor.execute("""
+                INSERT INTO logs 
+                VALUES (?, ?, ?)
+            """, (route_id, current_date, current_time))
+            conn.commit()
+            conn.close()
     except sqlite3.Error as e:
         print(f"Error logging data: {e}")
 
@@ -90,8 +103,10 @@ def handle_location_update(data):
     route_id = data.get("route_id", "Unknown")
     print(data)
     socketio.emit("location_update", data)
+    print("cclaling is_in")
     if is_in_college(data["longitude"], data["latitude"]):
         log_data(route_id)
+    print("called")
     return {"status": "received"}
 
 def init_db():

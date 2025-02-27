@@ -26,6 +26,7 @@ const APPS = [
     { name: "App One", url: "https://app1.vnrzone.site/", icon: "1️⃣" },
     { name: "App Two", url: "https://app2.vnrzone.site/", icon: "2️⃣" },
     { name: "App Three", url: "https://app3.vnrzone.site/", icon: "3️⃣" },
+    { name: "Complaints", url: "https://complaints.vnrzone.site/", icon: "3️⃣" },
 ];
 
 const SuperAppContent = () => {
