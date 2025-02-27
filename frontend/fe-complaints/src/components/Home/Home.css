@@ -1,0 +1,433 @@
+/* Importing Poppins Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+
+/* General Styling */
+.home-container-page body {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+.home-container-page .homepage-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+/* Header */
+.home-container-page .header {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  align-items: center;
+  background: transparent; /* Removed Background */
+}
+
+/* Search and Filter */
+.home-container-page .search-container {
+  display: flex;
+  min-width: 200px;
+  position: relative;
+  flex: 1;
+}
+
+.home-container-page .search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  font-size: 1.2rem;
+}
+
+.home-container-page .search-input {
+  width: 80%;
+  padding: 0.85rem 1rem 0.85rem 3rem;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  background-color: white;
+}
+
+.home-container-page .search-input:focus {
+  outline: none;
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.home-container-page .filter-select {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  background-color: white;
+  cursor: pointer;
+  min-width: 150px;
+
+}
+
+.home-container-page .filter-select:focus {
+  outline: none;
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+/* Complaint Cards */
+.home-container-page .complaints-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.home-container-page .complaint-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  padding: 1.5rem;
+}
+
+.home-container-page .complaint-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.home-container-page .card-header {
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.home-container-page .user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.home-container-page .username {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #212529;
+}
+
+.home-container-page .date {
+  font-size: 1rem;
+  color: #6c757d;
+}
+
+.home-container-page .voting-section {
+  display: flex;
+  gap: 1rem;
+}
+
+.home-container-page .vote-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+}
+
+.home-container-page .vote-btn:hover {
+  background: #f8f9fa;
+}
+
+.home-container-page .vote-btn.upvote {
+  color: #40c057;
+}
+
+.home-container-page .vote-btn.downvote {
+  color: #fa5252;
+}
+
+.home-container-page .vote-count {
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.home-container-page .card-content {
+  padding-top: 1rem;
+}
+
+.home-container-page .card-content h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.home-container-page .card-content p {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #495057;
+  line-height: 1.8;
+}
+
+.home-container-page .card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.home-container-page .category-tag {
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.home-container-page .status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.home-container-page .status-badge.pending {
+  background-color: #fff3bf;
+  color: #f08c00;
+}
+
+.home-container-page .status-badge.ongoing {
+  background-color: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.home-container-page .status-badge.resolved {
+  background-color: #e3fafc;
+  color: #0c8599;
+}
+
+.home-container-page .status-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Add Complaint Button */
+.home-container-page .add-complaint-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background-color: #6c63ff;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(108, 99, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.home-container-page .add-complaint-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(108, 99, 255, 0.3);
+  background-color: #5a52cc;
+}
+
+/* Admin Updates Card */
+.admin-updates-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+  font-family: "Poppins", sans-serif;
+  width: 100%;
+  max-width: 380px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Hover Effect - Elevates the card */
+.admin-updates-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Title */
+.updates-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+/* Updates List */
+.updates-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Each Update */
+.admin-update {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9f9f9;
+  padding: 6px 10px;
+  border-radius: 6px;
+  /* border-left: 3px solid #4caf50; */
+  transition: background 0.3s ease-in-out;
+}
+
+/* Hover Effect on Update */
+.admin-update:hover {
+  background: #eef7ee;
+}
+
+/* Update Text */
+.update-text {
+  font-size: 12px;
+  color: #333;
+  flex: 1;
+  margin: 0;
+}
+
+/* Update Time */
+.update-time {
+  font-size: 11px;
+  color: #777;
+  white-space: nowrap;
+}
+
+/* No Updates Message */
+.no-updates {
+  font-size: 12px;
+  color: #777;
+  text-align: center;
+  font-style: italic;
+}
+
+.admin-updates-btn {
+  background: #4f2370;
+  color: white;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.3s ease;
+  margin-top: 15px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  width: 20%;
+  justify-content: center;
+}
+
+.admin-updates-btn:hover {
+  background: #e9ecef;
+  color: black;
+}
+
+.admin-updates-section {
+  margin-top: 10px;
+  padding: 6px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  border-left: 3px solid #4caf50;
+  font-size: 1.2rem;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.admin-update {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+}
+
+.update-text {
+  flex: 1;
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
+
+.update-time {
+  font-size: 1rem;
+  color: #777;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.no-updates {
+  text-align: center;
+  font-size: 1rem;
+  color: #888;
+  font-style: italic;
+}
+
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column; /* Stack elements vertically */
+    align-items: stretch; /* Stretch elements to full width */
+  }
+
+  .search-container {
+    width: 100%; /* Full width for search container */
+  }
+
+  .filter-select {
+    width: 100%; /* Full width for dropdowns */
+  }
+
+  .admin-updates-card {
+    max-width: 100%;
+    padding: 16px;
+  }
+
+  .admin-updates-btn {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px;
+    display: flex; /* Ensure flex behavior */
+    justify-content: center;
+    align-items: center;
+  }
+
+  .admin-updates-section {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 1rem;
+  }
+
+  .admin-update {
+    display: flex;
+    flex-direction: column-reverse; /* Stack elements vertically */
+    align-items: flex-start;
+    font-size: 0.9rem;
+    padding: 6px;
+  }
+}
