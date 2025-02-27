@@ -38,7 +38,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ReactTypingEffect from 'react-typing-effect';
 
-const base_url= process.env.REACT_APP_BASE_URL;
+const base_url = import.meta.env.VITE_API_BASE_URL;
 
 const LEETCODE_CACHE_KEY = 'leetcode_data_cache';
 const LEETCODE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds

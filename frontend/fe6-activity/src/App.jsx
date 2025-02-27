@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Dashboard, ResumeBuilder, Login, Signup, Integrations, LeetCodeStats } from './pages';
+import { Dashboard, ResumeBuilder, Login, Signup, Integrations } from './pages';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import theme from './theme';
 import { useState, useEffect } from 'react';
+
+console.log('App component rendering');
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
