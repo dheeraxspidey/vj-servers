@@ -5,10 +5,7 @@ import {
   Button,
   Grid,
   Card,
-  CardContent,
   IconButton,
-  Divider,
-  Avatar,
   Dialog,
   DialogActions,
   DialogContent,
@@ -16,9 +13,11 @@ import {
   TextField,
   CircularProgress,
   Alert,
-  Container,
-  Stack,
-  Paper
+  Paper,
+  MenuItem,
+  Tabs,
+  Tab,
+  Snackbar
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
@@ -29,39 +28,20 @@ import CodeIcon from '@mui/icons-material/Code';
 import WorkIcon from '@mui/icons-material/Work';
 import SchoolIcon from '@mui/icons-material/School';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ResponsiveCalendar } from '@nivo/calendar';
 import { AccountCircle as AccountCircleIcon } from '@mui/icons-material';
 import Profile from '../components/Profile';
 import './Dashboard.css';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ReactTypingEffect from 'react-typing-effect';
 
-// Styled components
-const StyledCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  transition: 'transform 0.2s ease-in-out',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[4],
-  },
-}));
+const base_url= process.env.REACT_APP_BASE_URL;
 
-const StatCard = styled(Card)(({ theme }) => ({
-  backgroundColor: theme.palette.background.default,
-  border: `1px solid ${theme.palette.divider}`,
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-  },
-}));
-
-const ActivityCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  border: `1px solid ${theme.palette.divider}`,
-  '&:hover': {
-    borderColor: theme.palette.primary.main,
-  },
-}));
+const LEETCODE_CACHE_KEY = 'leetcode_data_cache';
+const LEETCODE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // Custom tooltip for the line chart
 const CustomTooltip = ({ active, payload, label }) => {
@@ -114,12 +94,9 @@ const Dashboard = ({ logout }) => {
   const username = userData?.username;
   const [leetcodeStatus, setLeetcodeStatus] = useState(null);
   const [leetcodeData, setLeetcodeData] = useState(null);
-  const [leetcodeHistory, setLeetcodeHistory] = useState([]);
   const [isSetUsernameModalOpen, setIsSetUsernameModalOpen] = useState(false);
   const [newLeetcodeUsername, setNewLeetcodeUsername] = useState('');
   const [isSettingUsername, setIsSettingUsername] = useState(false);
-  const [currentRating, setCurrentRating] = useState(0);
-  const [joinDate, setJoinDate] = useState(null);
   const [isAddActivityOpen, setIsAddActivityOpen] = useState(false);
   const [stats, setStats] = useState({
     totalProjects: 0,
@@ -127,38 +104,50 @@ const Dashboard = ({ logout }) => {
     githubContributions: 0,
     leetcodeSolved: 0
   });
-  const [heatmapData, setHeatmapData] = useState([]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    status: 'ongoing',
+    leetcode_rating: 0,
+    skills: []
+  });
+  const [dailyActivities, setDailyActivities] = useState([]);
+  const [activeTab, setActiveTab] = useState(0);
+  const [loadingDailyActivities, setLoadingDailyActivities] = useState(true);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Validate username
+      if (!username) {
+        console.error('No username found in user data');
+        setError('User data is incomplete. Please try logging in again.');
+        return;
+      }
+
+      console.log('Fetching data for username:', username);
+      await fetchActivities();
+      await checkLeetCodeStatus();
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setError("Failed to fetch user data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initial data fetch
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
-        // Validate username
-        if (!username) {
-          console.error('No username found in user data');
-          setError('User data is incomplete. Please try logging in again.');
-          return;
-        }
-
-        console.log('Fetching data for username:', username);
-        await fetchActivities();
-        await checkLeetCodeStatus();
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setError("Failed to fetch user data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUserData();
   }, [username]);
 
@@ -168,7 +157,7 @@ const Dashboard = ({ logout }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        `http://activity.vnrzone.site/ac-be/api/activities`,
+        `${base_url}/api/activities`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -179,13 +168,11 @@ const Dashboard = ({ logout }) => {
 
       // Calculate stats from activities
       const projectCount = response.data.filter(activity => 
-        activity.activity_type?.toLowerCase() === 'project' || 
-        activity.type?.toLowerCase() === 'project'
+        activity.activity_type?.toLowerCase() === 'project' 
       ).length;
 
       const certificationCount = response.data.filter(activity => 
-        activity.activity_type?.toLowerCase() === 'certification' || 
-        activity.type?.toLowerCase() === 'certification'
+        activity.activity_type?.toLowerCase() === 'certification' 
       ).length;
 
       // Update stats
@@ -206,6 +193,40 @@ const Dashboard = ({ logout }) => {
     }
   };
 
+  const getLeetCodeFromCache = () => {
+    const cachedData = localStorage.getItem(LEETCODE_CACHE_KEY);
+    if (!cachedData) return null;
+
+    try {
+      const { data, timestamp } = JSON.parse(cachedData);
+      const now = new Date().getTime();
+      
+      // Check if cache has expired (24 hours)
+      if (now - timestamp > LEETCODE_CACHE_EXPIRY) {
+        localStorage.removeItem(LEETCODE_CACHE_KEY);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error parsing cached LeetCode data:', error);
+      localStorage.removeItem(LEETCODE_CACHE_KEY);
+      return null;
+    }
+  };
+
+  const saveLeetCodeToCache = (data) => {
+    try {
+      const cacheData = {
+        data,
+        timestamp: new Date().getTime()
+      };
+      localStorage.setItem(LEETCODE_CACHE_KEY, JSON.stringify(cacheData));
+    } catch (error) {
+      console.error('Error caching LeetCode data:', error);
+    }
+  };
+
   const checkLeetCodeStatus = async () => {
     if (!username) {
       console.error('Cannot check LeetCode status: No username provided');
@@ -213,10 +234,19 @@ const Dashboard = ({ logout }) => {
     }
     
     try {
+      // First check cache
+      const cachedData = getLeetCodeFromCache();
+      if (cachedData) {
+        console.log('Using cached LeetCode data');
+        setLeetcodeStatus(cachedData.status);
+        setLeetcodeData(cachedData.data);
+        return;
+      }
+
       const token = localStorage.getItem('token');
       console.log('Checking LeetCode status for user:', username);
       const response = await axios.get(
-        `http://activity.vnrzone.site/ac-be/api/user/leetcode_status/${username}`,
+        `${base_url}/api/user/leetcode_status/${username}`,
         { 
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
@@ -227,7 +257,12 @@ const Dashboard = ({ logout }) => {
       setLeetcodeStatus(response.data);
       
       if (response.data.has_leetcode) {
-        await fetchLeetcodeData();
+        const leetcodeData = await fetchLeetcodeData();
+        // Cache both status and data
+        saveLeetCodeToCache({
+          status: response.data,
+          data: leetcodeData
+        });
       } else {
         console.log('User does not have LeetCode username set');
       }
@@ -252,7 +287,7 @@ const Dashboard = ({ logout }) => {
       const token = localStorage.getItem('token');
       console.log('Fetching LeetCode data for user:', username);
       const response = await axios.get(
-        `http://activity.vnrzone.site/ac-be/api/user/${username}/leetcode_history`,
+        `${base_url}/api/user/${username}/leetcode_history`,
         { 
           headers: { Authorization: `Bearer ${token}` },
           timeout: 5000
@@ -260,14 +295,11 @@ const Dashboard = ({ logout }) => {
       );
       console.log('LeetCode data response:', response.data);
       setLeetcodeData(response.data);
-      
-      // Update contest history if available
-      if (response.data.contest_history) {
-        setLeetcodeHistory(response.data.contest_history);
-      }
+      return response.data;
     } catch (error) {
       console.error('Error fetching LeetCode data:', error.response?.data || error.message);
       handleLeetCodeError(error);
+      return null;
     }
   };
 
@@ -303,7 +335,7 @@ const Dashboard = ({ logout }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://activity.vnrzone.site/ac-be/api/user/${username}/set_leetcode_username`,
+        `${base_url}/api/user/${username}/set_leetcode_username`,
         { leetcode_username: newLeetcodeUsername },
         { 
           headers: { Authorization: `Bearer ${token}` },
@@ -331,8 +363,11 @@ const Dashboard = ({ logout }) => {
     setLoading(true);
     setError(null);
     try {
+      // Force refresh by removing cache
+      localStorage.removeItem(LEETCODE_CACHE_KEY);
       await checkLeetCodeStatus();
-      alert('LeetCode data updated successfully');
+      setSnackbarMessage('LeetCode data updated successfully');
+      setSnackbarOpen(true);
     } catch (error) {
       console.error('Error updating LeetCode data:', error);
       setError('Error updating LeetCode data');
@@ -346,47 +381,224 @@ const Dashboard = ({ logout }) => {
   };
 
   const renderActivity = (activity, index) => {
-    let formattedDate = 'No date';
-    let formattedTime = '';
-    
-    if (activity.date) {
-      try {
-        const timestamp = activity.date.$date || activity.date;
-        const activityDate = new Date(timestamp);
-        
-        if (!isNaN(activityDate.getTime())) {
-          formattedDate = activityDate.toLocaleDateString();
-          formattedTime = activityDate.toLocaleTimeString([], { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          });
-        }
-      } catch (error) {
-        console.error("Error parsing date:", error);
-      }
-    }
+    const date = activity.date ? new Date(activity.date) : new Date();
+    const formattedDate = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
 
     return (
       <div className="activity-card" key={activity._id || index}>
-        <div className="activity-header">
-          <h3>{activity.title}</h3>
-          <span className={`status-badge ${activity.status}`}>
-            {activity.status}
-          </span>
+        <div className="activity-header" style={{ 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <h3>{activity.title}</h3>
+            <span className={`status-badge ${activity.status}`}>
+              {activity.status}
+            </span>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton 
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditActivity(activity.activity_id);
+              }}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                  color: 'primary.main'
+                }
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton 
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteActivity(activity.activity_id);
+              }}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                  color: 'error.main'
+                }
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </div>
-        <div className="activity-time">
-          {`${formattedDate} ${formattedTime}`}
+        <div className="activity-content">
+          <p>{activity.description}</p>
+          <div className="activity-meta">
+            <span className="activity-date">{formattedDate}</span>
+            {activity.leetcode_rating && (
+              <span className="activity-rating">
+                Rating: {activity.leetcode_rating}
+              </span>
+            )}
+          </div>
         </div>
-        {activity.leetcode_rating && (
-          <div className="activity-rating">
-            LeetCode Rating: {activity.leetcode_rating}
+      </div>
+    );
+  };
+
+  const handleAddActivity = async (newActivity) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${base_url}/api/add_activity`,
+        newActivity,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setActivities(prev => [response.data.activity, ...prev]);
+    } catch (error) {
+      console.error('Error adding activity:', error);
+      setError('Failed to add activity');
+    }
+  };
+
+  const handleEditActivity = (activityId) => {
+    const activity = activities.find(a => a.activity_id === activityId);
+    if (!activity) {
+      setError('Activity not found');
+      return;
+    }
+    
+    setEditingActivity(activity);
+    setEditFormData({
+      title: activity.title,
+      description: activity.description,
+      status: activity.status,
+      leetcode_rating: activity.leetcode_rating || 0,
+      skills: activity.skills || []
+    });
+  };
+
+  const handleDeleteActivity = async (activityId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `${base_url}/api/activities/${activityId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setActivities(prev => prev.filter(activity => activity.activity_id !== activityId));
+    } catch (error) {
+      console.error('Error deleting activity:', error);
+      setError('Failed to delete activity');
+    }
+  };
+
+  const fetchDailyActivities = async () => {
+    setLoadingDailyActivities(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `${base_url}/api/daily_activities`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      setDailyActivities(response.data);
+    } catch (error) {
+      console.error("Error fetching daily activities:", error);
+      setError('Failed to fetch daily activities');
+    } finally {
+      setLoadingDailyActivities(false);
+    }
+  };
+
+  useEffect(() => {
+    const initializeData = async () => {
+      await fetchUserData();
+      await fetchActivities();
+      await fetchDailyActivities();
+    };
+    
+    initializeData();
+  }, []);
+
+  const handleDeleteDailyActivity = async (dailyActivityId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `${base_url}/api/daily_activities/${dailyActivityId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDailyActivities(prev => prev.filter(activity => activity.daily_activity_id !== dailyActivityId));
+    } catch (error) {
+      console.error('Error deleting daily activity:', error);
+      setError('Failed to delete daily activity');
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
+  const renderDailyActivity = (activity, index) => {
+    const date = activity.date ? new Date(activity.date) : new Date();
+    const formattedDate = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    return (
+      <div className="activity-card" key={activity.daily_activity_id || index}>
+        <div className="activity-header" style={{ 
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <h3>{activity.title}</h3>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton 
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteDailyActivity(activity.daily_activity_id);
+              }}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                  color: 'error.main'
+                }
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </div>
+        <div className="activity-content">
+          <p>{activity.description}</p>
+          <div className="activity-meta">
+            <span className="activity-date">{formattedDate}</span>
+            {activity.skills && activity.skills.length > 0 && (
+              <div className="activity-skills">
+                {activity.skills.map((skill, idx) => (
+                  <span key={idx} className="skill-tag">{skill}</span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-        {activity.description && (
-          <div className="activity-description">
-            {activity.description}
-          </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -457,14 +669,103 @@ const Dashboard = ({ logout }) => {
           </div>
         </div>
 
+        {/* Welcome Message */}
+        <Box
+          sx={{
+            mb: 4,
+            p: 3,
+            background: 'linear-gradient(135deg, #006989 0%, #4B89AC 100%)',
+            borderRadius: 2,
+            color: 'white',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'radial-gradient(circle at top right, rgba(255,255,255,0.1) 0%, transparent 60%)',
+              pointerEvents: 'none'
+            }
+          }}
+        >
+          <Typography variant="h4" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Welcome, {userData?.name || 'Developer'}! 👋
+          </Typography>
+          <Box sx={{ height: '60px', display: 'flex', alignItems: 'center' }}>
+            <ReactTypingEffect
+              text={[
+                "Track your achievements and build the perfect resume",
+                "Showcase your LeetCode progress and skills",
+                "Document your journey to success"
+              ]}
+              speed={50}
+              eraseSpeed={50}
+              typingDelay={1000}
+              eraseDelay={2000}
+              cursorRenderer={cursor => (
+                <span style={{ color: '#ffa116' }}>{cursor}</span>
+              )}
+              displayTextRenderer={(text) => (
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 500,
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontSize: '1.1rem'
+                  }}
+                >
+                  {text}
+                </Typography>
+              )}
+            />
+          </Box>
+        </Box>
+
         {/* LeetCode Section */}
         <div className="leetcode-section">
           <div className="leetcode-header">
             <div className="leetcode-title">
-              <h2>LeetCode Profile</h2>
-              {joinDate && (
-                <p className="join-date">Member since {new Date(joinDate).toLocaleDateString()}</p>
-              )}
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                mb: 2
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="h6">LeetCode Stats</Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleSetLeetcodeUsername}
+                    sx={{
+                      padding: '4px',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      }
+                    }}
+                  >
+                    <EditIcon sx={{ fontSize: '16px', color: 'text.secondary' }} />
+                  </IconButton>
+                </Box>
+                {leetcodeStatus?.has_leetcode && (
+                  <IconButton
+                    size="small"
+                    onClick={handleUpdateLeetCodeData}
+                    sx={{
+                      padding: '8px',
+                      color: '#ffa116',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 161, 22, 0.04)'
+                      }
+                    }}
+                  >
+                    <RefreshIcon sx={{ fontSize: '20px' }} />
+                  </IconButton>
+                )}
+              </Box>
             </div>
           </div>
           
@@ -499,161 +800,240 @@ const Dashboard = ({ logout }) => {
                 </Button>
               </div>
             ) : (
-              <div className="leetcode-stats">
-                {leetcodeData ? (
-                  <>
+              <Grid container spacing={3}>
+                {/* Problem Solving Stats Card */}
+                <Grid item xs={12} md={6}>
+                  <Paper 
+                    sx={{ 
+                      p: { xs: 2, sm: 3 },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      bgcolor: 'background.paper',
+                      borderRadius: 2,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  >
                     <Box sx={{ 
                       display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      mb: 2
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: 'center', 
+                      gap: 2, 
+                      mb: 3 
                     }}>
-                      
-                    </Box>
-                    <Grid container spacing={3}>
-                      {/* Problem Solving Stats */}
-                      <Grid item xs={12}>
-                        <Paper sx={{ p: 3, mb: 3 }}>
-                          <Box sx={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            mb: 3
+                      <Box sx={{ 
+                        width: { xs: '160px', sm: '200px' },
+                        height: { xs: '160px', sm: '200px' },
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Box sx={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            border: '20px solid #f3f3f3',
+                            borderRadius: '50%'
+                          }
+                        }}>
+                          <Box sx={{
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            border: '20px solid',
+                            borderColor: (theme) => `${theme.palette.primary.main} transparent transparent transparent`,
+                            borderRadius: '50%',
+                            transform: 'rotate(-45deg)',
+                            animation: 'rotate 1s linear'
+                          }} />
+                          <Typography variant="h4" sx={{ 
+                            fontWeight: 'bold', 
+                            zIndex: 1,
+                            fontSize: { 
+                              xs: '1.2rem',  // Smaller font size on mobile
+                              sm: '2rem'     // Regular size on larger screens
+                            }
                           }}>
-                            <Typography variant="h6">
-                              Problem Solving Stats
-                            </Typography>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                              onClick={handleSetLeetcodeUsername}
-                              startIcon={<CodeIcon />}
-                              sx={{ 
-                                minWidth: 'auto',
-                                py: 0.5
-                              }}
-                            >
-                              Change username
-                            </Button>
-                          </Box>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <Typography variant="h4" color="primary">
-                                {leetcodeData.submission_stats.total}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                Total Solved
-                              </Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <Typography variant="h4" color="success.main">
-                                {leetcodeData.submission_stats.easy}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                Easy
-                              </Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <Typography variant="h4" color="warning.main">
-                                {leetcodeData.submission_stats.medium}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                Medium
-                              </Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <Typography variant="h4" color="error.main">
-                                {leetcodeData.submission_stats.hard}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                Hard
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Paper>
-                      </Grid>
-
-                      {/* Contest History Graph */}
-                      <Grid item xs={12}>
-                        <Paper 
-                          sx={{ 
-                            p: 3, 
-                            mb: 3,
-                            height: '400px',
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}
-                        >
-                          <Typography variant="h6" gutterBottom>
-                            Contest Rating History
+                            {leetcodeData?.submission_stats?.total || '258'}/3466
                           </Typography>
-                          {leetcodeData.contest_history && leetcodeData.contest_history.length > 0 ? (
-                            <Box sx={{ flex: 1, minHeight: '300px' }}>
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart
-                                  data={leetcodeData.contest_history.map(contest => ({
-                                    ...contest,
-                                    date: new Date(contest.date * 1000).getTime() // Convert Unix timestamp to milliseconds
-                                  }))}
-                                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                                >
-                                  <CartesianGrid strokeDasharray="3 3" />
-                                  <XAxis
-                                    dataKey="date"
-                                    tick={{ fontSize: 12 }}
-                                    tickFormatter={(timestamp) => {
-                                      const date = new Date(timestamp);
-                                      return date.toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                      });
-                                    }}
-                                    angle={-45}
-                                    textAnchor="end"
-                                    height={60}
-                                  />
-                                  <YAxis
-                                    label={{ 
-                                      value: 'Rating', 
-                                      angle: -90, 
-                                      position: 'insideLeft',
-                                      style: { textAnchor: 'middle' }
-                                    }}
-                                  />
-                                  <Tooltip content={CustomTooltip} />
-                                  <Line
-                                    type="monotone"
-                                    dataKey="rating"
-                                    stroke="#4361ee"
-                                    strokeWidth={2}
-                                    dot={{ r: 4, fill: '#4361ee' }}
-                                    activeDot={{ r: 6 }}
-                                  />
-                                </LineChart>
-                              </ResponsiveContainer>
-                            </Box>
-                          ) : (
+                          <Typography variant="body2" color="text.secondary" sx={{ 
+                            position: 'absolute',
+                            bottom: '25%',
+                            zIndex: 1,
+                            fontSize: {
+                              xs: '0.75rem',  // Smaller font size on mobile
+                              sm: '0.875rem'  // Regular size on larger screens
+                            }
+                          }}>
+                            Solved
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ flex: 1, width: '100%' }}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <span>Easy</span>
+                            <span style={{ color: '#00b8a3' }}>{leetcodeData?.submission_stats?.easy || '118'}/861</span>
+                          </Typography>
+                          <Box sx={{ 
+                            width: '100%',
+                            height: '8px',
+                            bgcolor: '#f3f3f3',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}>
                             <Box sx={{ 
-                              flex: 1, 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              justifyContent: 'center' 
-                            }}>
-                              <Typography variant="body2" color="text.secondary">
-                                No contest history available
-                              </Typography>
-                            </Box>
-                          )}
-                        </Paper>
-                      </Grid>
-                    </Grid>
-                  </>
-                ) : (
-                  <CircularProgress />
-                )}
-              </div>
+                              width: '40%',
+                              height: '100%',
+                              bgcolor: '#00b8a3',
+                              borderRadius: '4px'
+                            }} />
+                          </Box>
+                        </Box>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <span>Med</span>
+                            <span style={{ color: '#ffc01e' }}>{leetcodeData?.submission_stats?.medium || '128'}/1801</span>
+                          </Typography>
+                          <Box sx={{ 
+                            width: '100%',
+                            height: '8px',
+                            bgcolor: '#f3f3f3',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}>
+                            <Box sx={{ 
+                              width: '35%',
+                              height: '100%',
+                              bgcolor: '#ffc01e',
+                              borderRadius: '4px'
+                            }} />
+                          </Box>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <span>Hard</span>
+                            <span style={{ color: '#ff375f' }}>{leetcodeData?.submission_stats?.hard || '12'}/804</span>
+                          </Typography>
+                          <Box sx={{ 
+                            width: '100%',
+                            height: '8px',
+                            bgcolor: '#f3f3f3',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}>
+                            <Box sx={{ 
+                              width: '15%',
+                              height: '100%',
+                              bgcolor: '#ff375f',
+                              borderRadius: '4px'
+                            }} />
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+
+                {/* Contest Rating Graph Card */}
+                <Grid item xs={12} md={6}>
+                  <Paper 
+                    sx={{ 
+                      p: { xs: 2, sm: 3 },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      bgcolor: 'background.paper',
+                      borderRadius: 2,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      justifyContent: 'space-between', 
+                      gap: { xs: 1, sm: 2 },
+                      mb: 2 
+                    }}>
+                      <Box sx={{ 
+                        display: { xs: 'grid', sm: 'block' },
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: 2,
+                        width: '100%'
+                      }}>
+                        <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                          <Typography variant="body2" color="text.secondary">Contest Rating</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#2cbe4e' }}>
+                            {leetcodeData?.contest_history?.[leetcodeData.contest_history.length - 1]?.rating || '1,651'}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                          <Typography variant="body2" color="text.secondary">Attended</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            {leetcodeData?.contest_history?.length || '43'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                          <Typography variant="body2" color="text.secondary">Top %</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            17.02%
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Box sx={{ 
+                      flex: 1, 
+                      minHeight: { xs: 250, sm: 200 },
+                      mt: { xs: 2, sm: 0 }
+                    }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={leetcodeData?.contest_history?.map(contest => ({
+                            ...contest,
+                            date: new Date(contest.date * 1000).getTime()
+                          })) || []}
+                          margin={{ top: 10, right: 10, left: 10, bottom: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="date"
+                            type="number"
+                            scale="time"
+                            domain={['auto', 'auto']}
+                            tickFormatter={(timestamp) => {
+                              const date = new Date(timestamp);
+                              return date.toLocaleDateString('en-US', {
+                                year: 'numeric'
+                              });
+                            }}
+                            stroke="#999"
+                          />
+                          <YAxis stroke="#999" />
+                          <Tooltip content={CustomTooltip} />
+                          <Line
+                            type="monotone"
+                            dataKey="rating"
+                            stroke="#ffa116"
+                            strokeWidth={2}
+                            dot={{ r: 0 }}
+                            activeDot={{ r: 6, fill: '#ffa116' }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
             )}
           </div>
         </div>
@@ -672,12 +1052,40 @@ const Dashboard = ({ logout }) => {
           </div>
         </div>
 
-        {/* Recent Activities */}
+        {/* Activities Tabs Section */}
         <div className="activities-section">
-          <h2>Recent Activities</h2>
-          <div className="activities-list">
-            {activities.map((activity, index) => renderActivity(activity, index))}
-          </div>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={activeTab} onChange={handleTabChange} aria-label="activity tabs">
+              <Tab label="Major Activities" />
+              <Tab label="Daily Activities" />
+            </Tabs>
+          </Box>
+
+          {activeTab === 0 ? (
+            <div className="activities-list">
+              {loading ? (
+                <CircularProgress />
+              ) : activities.length > 0 ? (
+                activities.map((activity, index) => renderActivity(activity, index))
+              ) : (
+                <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', py: 3 }}>
+                  No activities found
+                </Typography>
+              )}
+            </div>
+          ) : (
+            <div className="activities-list">
+              {loadingDailyActivities ? (
+                <CircularProgress />
+              ) : dailyActivities.length > 0 ? (
+                dailyActivities.map((activity, index) => renderDailyActivity(activity, index))
+              ) : (
+                <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', py: 3 }}>
+                  No daily activities found
+                </Typography>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Modals */}
@@ -736,10 +1144,98 @@ const Dashboard = ({ logout }) => {
           </DialogActions>
         </Dialog>
 
+        {editingActivity && (
+          <Dialog
+            open={!!editingActivity}
+            onClose={() => setEditingActivity(null)}
+            fullWidth
+            maxWidth="sm"
+          >
+            <DialogTitle>Edit Activity</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Title"
+                fullWidth
+                value={editFormData.title}
+                onChange={(e) => setEditFormData(prev => ({
+                  ...prev,
+                  title: e.target.value
+                }))}
+              />
+              <TextField
+                margin="dense"
+                label="Description"
+                fullWidth
+                multiline
+                rows={4}
+                value={editFormData.description}
+                onChange={(e) => setEditFormData(prev => ({
+                  ...prev,
+                  description: e.target.value
+                }))}
+              />
+              <TextField
+                select
+                margin="dense"
+                label="Status"
+                fullWidth
+                value={editFormData.status}
+                onChange={(e) => setEditFormData(prev => ({
+                  ...prev,
+                  status: e.target.value
+                }))}
+              >
+                <MenuItem value="ongoing">Ongoing</MenuItem>
+                <MenuItem value="completed">Completed</MenuItem>
+              </TextField>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setEditingActivity(null)}>Cancel</Button>
+              <Button 
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    const response = await axios.put(
+                      `${base_url}/api/activities/${editingActivity.activity_id}`,
+                      editFormData,
+                      { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                    
+                    setActivities(prev => 
+                      prev.map(activity => 
+                        activity.activity_id === editingActivity.activity_id 
+                          ? { ...activity, ...editFormData }
+                          : activity
+                      )
+                    );
+                    setEditingActivity(null);
+                  } catch (error) {
+                    console.error('Error updating activity:', error);
+                    setError('Failed to update activity');
+                  }
+                }}
+                variant="contained"
+              >
+                Save Changes
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
+
         {error && (
           <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>
         )}
       </div>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </div>
   );
 };

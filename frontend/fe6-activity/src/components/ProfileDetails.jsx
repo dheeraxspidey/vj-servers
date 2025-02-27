@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -13,9 +13,12 @@ import {
   DialogContent,
   DialogActions,
   MenuItem,
-  Stack
+  Stack,
+  Avatar,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 
 const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
   const [formData, setFormData] = useState({
@@ -26,23 +29,23 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
     bio: initialData.bio || '',
     location: initialData.location || '',
     github: initialData.github || '',
-    linkedin: initialData.linkedin || ''
+    linkedin: initialData.linkedin || '',
   });
 
   const [newEducation, setNewEducation] = useState({
     school: '',
     degree: '',
     field: '',
-    startYear: '',
-    endYear: '',
+    start_year: '',
+    end_year: '',
     current: false
   });
 
   const [newExperience, setNewExperience] = useState({
     company: '',
     position: '',
-    startDate: '',
-    endDate: '',
+    start_date: '',
+    end_date: '',
     description: '',
     current: false
   });
@@ -50,6 +53,21 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
   const [newSkill, setNewSkill] = useState('');
   const [isEducationDialogOpen, setIsEducationDialogOpen] = useState(false);
   const [isExperienceDialogOpen, setIsExperienceDialogOpen] = useState(false);
+  const [editingEducationIndex, setEditingEducationIndex] = useState(-1);
+  const [editingExperienceIndex, setEditingExperienceIndex] = useState(-1);
+
+  useEffect(() => {
+    setFormData({
+      name: initialData.name || '',
+      education: initialData.education || [],
+      experience: initialData.experience || [],
+      skills: initialData.skills || [],
+      bio: initialData.bio || '',
+      location: initialData.location || '',
+      github: initialData.github || '',
+      linkedin: initialData.linkedin || '',
+    });
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,35 +77,65 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
     }));
   };
 
+  const handleOpenEducationDialog = (index = -1) => {
+    setEditingEducationIndex(index);
+    if (index >= 0) {
+      setNewEducation(formData.education[index]);
+    } else {
+      setNewEducation({
+        school: '',
+        degree: '',
+        field: '',
+        start_year: '',
+        end_year: '',
+        current: false
+      });
+    }
+    setIsEducationDialogOpen(true);
+  };
+
+  const handleOpenExperienceDialog = (index = -1) => {
+    setEditingExperienceIndex(index);
+    if (index >= 0) {
+      setNewExperience(formData.experience[index]);
+    } else {
+      setNewExperience({
+        company: '',
+        position: '',
+        start_date: '',
+        end_date: '',
+        description: '',
+        current: false
+      });
+    }
+    setIsExperienceDialogOpen(true);
+  };
+
   const handleAddEducation = () => {
-    setFormData(prev => ({
-      ...prev,
-      education: [...prev.education, newEducation]
-    }));
-    setNewEducation({
-      school: '',
-      degree: '',
-      field: '',
-      startYear: '',
-      endYear: '',
-      current: false
+    setFormData(prev => {
+      const newEducationList = [...prev.education];
+      if (editingEducationIndex >= 0) {
+        newEducationList[editingEducationIndex] = newEducation;
+      } else {
+        newEducationList.push(newEducation);
+      }
+      return { ...prev, education: newEducationList };
     });
+    setEditingEducationIndex(-1);
     setIsEducationDialogOpen(false);
   };
 
   const handleAddExperience = () => {
-    setFormData(prev => ({
-      ...prev,
-      experience: [...prev.experience, newExperience]
-    }));
-    setNewExperience({
-      company: '',
-      position: '',
-      startDate: '',
-      endDate: '',
-      description: '',
-      current: false
+    setFormData(prev => {
+      const newExperienceList = [...prev.experience];
+      if (editingExperienceIndex >= 0) {
+        newExperienceList[editingExperienceIndex] = newExperience;
+      } else {
+        newExperienceList.push(newExperience);
+      }
+      return { ...prev, experience: newExperienceList };
     });
+    setEditingExperienceIndex(-1);
     setIsExperienceDialogOpen(false);
   };
 
@@ -155,7 +203,7 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
       bio: formData.bio || '',
       location: formData.location || '',
       github: formData.github || '',
-      linkedin: formData.linkedin || ''
+      linkedin: formData.linkedin || '',
     };
 
     onSubmit(finalData);
@@ -236,18 +284,25 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
                 >
                   <DeleteIcon />
                 </IconButton>
-                <Typography variant="subtitle2">{edu.school}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => handleOpenEducationDialog(index)}
+                  sx={{ position: 'absolute', right: 40, top: 8 }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <Typography variant="subtitle1">{edu.school}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {edu.degree} in {edu.field}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {edu.startYear} - {edu.current ? 'Present' : edu.endYear}
+                  {edu.start_year} - {edu.current ? 'Present' : edu.end_year}
                 </Typography>
               </Paper>
             ))}
             <Button
               startIcon={<AddIcon />}
-              onClick={() => setIsEducationDialogOpen(true)}
+              onClick={() => handleOpenEducationDialog()}
             >
               Add Education
             </Button>
@@ -269,19 +324,26 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
                 >
                   <DeleteIcon />
                 </IconButton>
-                <Typography variant="subtitle2">{exp.position}</Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => handleOpenExperienceDialog(index)}
+                  sx={{ position: 'absolute', right: 40, top: 8 }}
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <Typography variant="subtitle1">{exp.position}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {exp.company}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
+                  {exp.start_date} - {exp.current ? 'Present' : exp.end_date}
                 </Typography>
                 <Typography variant="body2">{exp.description}</Typography>
               </Paper>
             ))}
             <Button
               startIcon={<AddIcon />}
-              onClick={() => setIsExperienceDialogOpen(true)}
+              onClick={() => handleOpenExperienceDialog()}
             >
               Add Experience
             </Button>
@@ -337,7 +399,9 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Add Education</DialogTitle>
+        <DialogTitle>
+          {editingEducationIndex >= 0 ? 'Edit Education' : 'Add Education'}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -364,21 +428,37 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
                 onChange={(e) => setNewEducation(prev => ({ ...prev, field: e.target.value }))}
               />
             </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={newEducation.current}
+                    onChange={(e) => setNewEducation(prev => ({
+                      ...prev,
+                      current: e.target.checked,
+                      end_year: e.target.checked ? '' : prev.end_year
+                    }))}
+                  />
+                }
+                label="Currently attending"
+              />
+            </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Start Year"
-                value={newEducation.startYear}
-                onChange={(e) => setNewEducation(prev => ({ ...prev, startYear: e.target.value }))}
+                value={newEducation.start_year}
+                onChange={(e) => setNewEducation(prev => ({ ...prev, start_year: e.target.value }))}
               />
             </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="End Year"
-                value={newEducation.endYear}
-                onChange={(e) => setNewEducation(prev => ({ ...prev, endYear: e.target.value }))}
+                value={newEducation.end_year}
+                onChange={(e) => setNewEducation(prev => ({ ...prev, end_year: e.target.value }))}
                 disabled={newEducation.current}
+                placeholder={newEducation.current ? "Present" : ""}
               />
             </Grid>
           </Grid>
@@ -396,7 +476,9 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Add Experience</DialogTitle>
+        <DialogTitle>
+          {editingExperienceIndex >= 0 ? 'Edit Experience' : 'Add Experience'}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -415,13 +497,28 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
                 onChange={(e) => setNewExperience(prev => ({ ...prev, position: e.target.value }))}
               />
             </Grid>
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={newExperience.current}
+                    onChange={(e) => setNewExperience(prev => ({
+                      ...prev,
+                      current: e.target.checked,
+                      end_date: e.target.checked ? '' : prev.end_date
+                    }))}
+                  />
+                }
+                label="I currently work here"
+              />
+            </Grid>
             <Grid item xs={6}>
               <TextField
                 fullWidth
                 label="Start Date"
                 type="date"
-                value={newExperience.startDate}
-                onChange={(e) => setNewExperience(prev => ({ ...prev, startDate: e.target.value }))}
+                value={newExperience.start_date}
+                onChange={(e) => setNewExperience(prev => ({ ...prev, start_date: e.target.value }))}
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
@@ -430,10 +527,11 @@ const ProfileDetails = ({ onSubmit, onSkip, initialData = {} }) => {
                 fullWidth
                 label="End Date"
                 type="date"
-                value={newExperience.endDate}
-                onChange={(e) => setNewExperience(prev => ({ ...prev, endDate: e.target.value }))}
+                value={newExperience.end_date}
+                onChange={(e) => setNewExperience(prev => ({ ...prev, end_date: e.target.value }))}
                 disabled={newExperience.current}
                 InputLabelProps={{ shrink: true }}
+                placeholder={newExperience.current ? "Present" : ""}
               />
             </Grid>
             <Grid item xs={12}>

@@ -12,7 +12,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
-
+const base_url= process.env.REACT_APP_BASE_URL;
+console.log('base_url:', base_url);
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -37,9 +38,11 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://activity.vnrzone.site/ac-be/api/auth/login', {
+      const response = await axios.post(`${base_url}/api/auth/login`, {
         email: formData.email,
         password: formData.password
+      }, {
+        withCredentials: true // Required for cookies/JWTs
       });
 
       const { token, user } = response.data;

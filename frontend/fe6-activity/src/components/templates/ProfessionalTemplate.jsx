@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, Typography, Chip, Avatar } from '@mui/material';
+import axios from 'axios';
 import {
   ResumeContainer,
   Section,
@@ -9,23 +10,51 @@ import {
   SkillsContainer,
   ProjectItem,
   PrintStyles,
-  ContentContainer
+  ContentContainer,
+  ProfileImageContainer
 } from './styles';
 
-const ModernTemplate = ({ resumeData }) => {
+const base_url = process.env.REACT_APP_BASE_URL;
+
+const ProfessionalTemplate = ({ resumeData }) => {
   const contentRef = useRef(null);
+  const [userImage, setUserImage] = useState(null);
+
+  useEffect(() => {
+    // Only fetch from API if resumeData doesn't already have a profile_image
+    if (!resumeData?.profile_image) {
+      const fetchUserImage = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await axios.get(
+            `${base_url}/api/user/profile/image`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              },
+              responseType: 'arraybuffer'
+            }
+          );
+          
+          const base64Image = Buffer.from(response.data, 'binary').toString('base64');
+          setUserImage(base64Image);
+        } catch (error) {
+          console.error('Error fetching user image:', error);
+        }
+      };
+
+      fetchUserImage();
+    }
+  }, [resumeData?.profile_image]);
 
   useEffect(() => {
     if (!resumeData) return;
 
-    // Function to adjust content scale if it overflows
     const adjustScale = () => {
       const content = contentRef.current;
       if (!content) return;
 
-      // Only adjust scale in preview mode, not when printing
       if (!window.matchMedia('print').matches) {
-        // Reset scale to measure true height
         content.style.transform = 'scale(1)';
         const contentHeight = content.scrollHeight;
         const containerHeight = content.parentElement.clientHeight;
@@ -190,25 +219,45 @@ const ModernTemplate = ({ resumeData }) => {
     <ResumeContainer id="resume-preview" sx={PrintStyles}>
       <ContentContainer>
         <Box ref={contentRef}>
-          {/* Header Section */}
+          {/* Header Section with Profile Image */}
           <ModernHeader>
-            <Typography variant="h4" gutterBottom>
-              {basics.name}
-            </Typography>
-            <Typography variant="body1" color="textSecondary">
-              {basics.email} • {basics.location}
-            </Typography>
-            <Box sx={{ mt: 0.5 }}>
-              {basics.profiles.linkedin && (
-                <Typography variant="body2" color="textSecondary">
-                  LinkedIn: {basics.profiles.linkedin}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
+              <ProfileImageContainer>
+                <Avatar
+                  src={resumeData.profile_image 
+                    ? `data:image/jpeg;base64,${resumeData.profile_image}` 
+                    : userImage 
+                      ? `data:image/jpeg;base64,${userImage}` 
+                      : ''}
+                  alt={basics.name}
+                  sx={{
+                    width: 120,
+                    height: 120,
+                    border: '3px solid #fff',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  }}
+                />
+              </ProfileImageContainer>
+              <Box>
+                <Typography variant="h4" gutterBottom>
+                  {basics.name}
                 </Typography>
-              )}
-              {basics.profiles.github && (
-                <Typography variant="body2" color="textSecondary">
-                  GitHub: {basics.profiles.github}
+                <Typography variant="body1" color="textSecondary">
+                  {basics.email} • {basics.location}
                 </Typography>
-              )}
+                <Box sx={{ mt: 0.5 }}>
+                  {basics.profiles?.linkedin && (
+                    <Typography variant="body2" color="textSecondary">
+                      LinkedIn: {basics.profiles.linkedin}
+                    </Typography>
+                  )}
+                  {basics.profiles?.github && (
+                    <Typography variant="body2" color="textSecondary">
+                      GitHub: {basics.profiles.github}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
             </Box>
           </ModernHeader>
 
@@ -220,4 +269,4 @@ const ModernTemplate = ({ resumeData }) => {
   );
 };
 
-export default ModernTemplate; 
+export default ProfessionalTemplate; 

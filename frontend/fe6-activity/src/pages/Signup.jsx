@@ -16,7 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileDetails from '../components/ProfileDetails';
-
+const base_url= process.env.REACT_APP_BASE_URL;
 const steps = ['Account Details', 'Profile Information'];
 
 const Signup = () => {
@@ -50,7 +50,7 @@ const Signup = () => {
 
       setLoading(true);
       try {
-        const response = await axios.post('http://activity.vnrzone.site/ac-be/api/auth/signup', {
+        const response = await axios.post(`${base_url}/api/auth/signup`, {
           username: formData.email.split('@')[0],
           email: formData.email,
           password: formData.password,
@@ -76,7 +76,7 @@ const Signup = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://activity.vnrzone.site/ac-be/api/user/profile',
+        `${base_url}/api/user/profile`,
         profileData,
         {
           headers: {

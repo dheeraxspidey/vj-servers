@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -19,11 +19,16 @@ import { Close as CloseIcon, Edit as EditIcon } from '@mui/icons-material';
 import axios from 'axios';
 import ProfileDetails from './ProfileDetails';
 
+const base_url = process.env.REACT_APP_BASE_URL;
+console.log(base_url);
+
 const Profile = ({ open, onClose }) => {
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef(null);
+  const [imageUrl, setImageUrl] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -31,18 +36,37 @@ const Profile = ({ open, onClose }) => {
     }
   }, [open]);
 
+  useEffect(() => {
+    if (profileData?.profile_image) {
+      const byteCharacters = atob(profileData.profile_image);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+      const newImageUrl = URL.createObjectURL(blob);
+      setImageUrl(newImageUrl);
+
+      return () => URL.revokeObjectURL(newImageUrl);
+    } else {
+      setImageUrl(null);
+    }
+  }, [profileData?.profile_image]);
+
   const fetchProfileData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(
-        'http://activity.vnrzone.site/ac-be/api/user/profile',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      setProfileData(response.data);
+      const response = await axios.get(`${base_url}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data && response.data.profile_image) {
+        setProfileData(response.data);
+      } else {
+        console.warn("Profile data missing profile_image:", response.data);
+        setProfileData({...response.data, profile_image: ''});
+      }
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile data');
@@ -55,50 +79,18 @@ const Profile = ({ open, onClose }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      
-      // Format education data
-      const formattedEducation = updatedData.education.map(edu => ({
-        school: edu.school,
-        degree: edu.degree,
-        field: edu.field,
-        start_year: edu.startYear || edu.start_year, // Handle both formats
-        end_year: edu.endYear || edu.end_year, // Handle both formats
-        current: edu.current || false,
-        description: edu.description || ''
-      }));
-
-      // Format experience data
-      const formattedExperience = updatedData.experience.map(exp => ({
-        company: exp.company,
-        position: exp.position,
-        start_date: exp.startDate || exp.start_date, // Handle both formats
-        end_date: exp.endDate || exp.end_date, // Handle both formats
-        current: exp.current || false,
-        description: exp.description || ''
-      }));
-
-      // Create the formatted data object
-      const formattedData = {
-        ...updatedData,
-        education: formattedEducation,
-        experience: formattedExperience,
-        skills: updatedData.skills || [],
-        bio: updatedData.bio || '',
-        location: updatedData.location || '',
-        github: updatedData.github || '',
-        linkedin: updatedData.linkedin || ''
-      };
-
-      await axios.post(
-        'http://activity.vnrzone.site/ac-be/api/user/profile',
-        formattedData,
+      const response = await axios.post(
+        `${base_url}/api/user/profile`,
+        updatedData,
         {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         }
       );
-      setProfileData(formattedData);
+
+      // Refresh profile data after successful update
+      await fetchProfileData();
       setIsEditing(false);
       setError('');
     } catch (err) {
@@ -109,9 +101,45 @@ const Profile = ({ open, onClose }) => {
     }
   };
 
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.post(
+        `${base_url}/api/user/profile_image`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // After successful upload, re-fetch profile data.
+        fetchProfileData();
+      } else {
+        setError('Failed to upload image.');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError('Failed to upload image.');
+    }
+  };
+
   const handleClose = () => {
     setIsEditing(false);
     onClose();
+  };
+
+  const handleProfileIconClick = () => {
+    fileInputRef.current.click();
   };
 
   if (loading) {
@@ -166,18 +194,32 @@ const Profile = ({ open, onClose }) => {
         )}
 
         <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Avatar
+          <Box
             sx={{
               width: 120,
               height: 120,
               margin: '0 auto',
               mb: 2,
-              bgcolor: 'primary.main',
-              fontSize: '3rem'
+              position: 'relative',
+              cursor: 'pointer',
             }}
+            onClick={handleProfileIconClick}
           >
-            {profileData?.name?.[0]?.toUpperCase()}
-          </Avatar>
+            <Avatar
+              sx={{
+                width: '100%',
+                height: '100%',
+                bgcolor: 'primary.main',
+              }}
+              src={imageUrl}
+            >
+              {!imageUrl && profileData?.name ? (
+                profileData.name.charAt(0).toUpperCase()
+              ) : (
+                !imageUrl && !profileData?.name ? '+' : null
+              )}
+            </Avatar>
+          </Box>
           <Typography variant="h5" gutterBottom>
             {profileData?.name}
           </Typography>
@@ -245,7 +287,7 @@ const Profile = ({ open, onClose }) => {
                     {edu.degree} in {edu.field}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {edu.startYear} - {edu.current ? 'Present' : edu.endYear}
+                    {edu.start_year} - {edu.current ? 'Present' : edu.end_year}
                   </Typography>
                 </Box>
               ))}
@@ -273,7 +315,7 @@ const Profile = ({ open, onClose }) => {
                     {exp.company}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
+                    {exp.start_date} - {exp.current ? 'Present' : exp.end_date}
                   </Typography>
                   <Typography variant="body2">
                     {exp.description}
@@ -305,6 +347,15 @@ const Profile = ({ open, onClose }) => {
             </Typography>
           )}
         </Paper>
+
+        {/* Hidden file input */}
+        <input
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+        />
       </DialogContent>
     </Dialog>
   );
