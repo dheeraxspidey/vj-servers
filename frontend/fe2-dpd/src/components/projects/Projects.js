@@ -21,7 +21,7 @@ function Projects() {
   async function searchProjects(query) {
     setLoading(true);
     try {
-      const res = await axios.post(`${backendURL}/searchForProject`, { query: query }, {
+      const res = await axios.post(`${backendURL}/search`, { query: query }, {
         headers: {
           'Content-Type': 'application/json'
         }

@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import sqlite3
 import bcrypt
 import re
-from flask_cors import CORS
 import json
 import pandas as pd
 from functools import wraps
@@ -12,18 +12,28 @@ from email.message import EmailMessage
 from datetime import datetime, timedelta, timezone
 from threading import Thread
 from collections import Counter
+from sentence_transformers import SentenceTransformer, util
 app = Flask(__name__)
 
+# Configure CORS to allow all origins (for development only)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for testing; adjust for production
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+@app.route('/')
+def home():
+    return "Hello, Flask server is working!"
 
-DATABASE = 'dpd.db'
-file_path = 'projects.json'
+DATABASE = '/home/campus/vj-servers/backend/be2-dpd/DB/dpd.db'
+file_path = '/home/campus/vj-servers/backend/be2-dpd/projects.json'
 with open(file_path, 'r') as file:
     data = json.load(file)
 
-df = pd.DataFrame(data)
+
 import jwt
 
+df = pd.DataFrame(data)
+#df['CombinedText'] = df['ProjectTitle'].apply(clean_text)
+# vectorizer = TfidfVectorizer().fit(df['CombinedText'])
+passages = df['ProjectTitle'].tolist()
 
 # Secret key for encoding and decoding JWT
 SECRET_KEY = 'kiran'
@@ -216,6 +226,41 @@ def department_check(email,department):
 
 def is_otp_expired(generated_time, validity_duration):
     return datetime.now() > (generated_time + validity_duration)
+@app.route('/searchForProject', methods=['POST'])
+def searchForProject():
+    if request.method == 'POST':
+        request_data = request.get_json()
+        query = request_data.get('query', '')
+        print(query)
+        #query=clean_text(query)
+        # query_vec = vectorizer.transform([query])
+        # project_vecs = vectorizer.transform(df['CombinedText'])
+        
+        # scores = cosine_similarity(query_vec, project_vecs).flatten()
+        # results = [{'project': project, 'score': score} for project, score in zip(data, scores)]
+        # sorted_results = sorted(results, key=lambda x: x['score'], reverse=True)
+        
+
+# Encode the query and passages
+        query_embedding = model.encode(query, convert_to_tensor=True)
+        passage_embeddings = model.encode(passages, convert_to_tensor=True)
+
+        # Compute cosine similarity between the query and passages
+        similarity_scores = util.pytorch_cos_sim(query_embedding, passage_embeddings)
+
+        # Convert similarity scores to a numpy array
+        similarity_scores = similarity_scores.cpu().numpy().flatten()
+        similarity_scores = similarity_scores.astype(float)
+        # Prepare the results
+        results = [{'passage': passage, 'score': score} for passage, score in zip(data, similarity_scores)]
+        sorted_results = sorted(results, key=lambda x: x['score'], reverse=True)
+        # Print results
+        
+        filtered_results = [result for result in sorted_results if result['score'] > 0.2]
+        final_results = [{"passage": dict(result["passage"]), "score": float(result["score"])} for result in filtered_results]
+
+        return jsonify({"Results": final_results})  # Ensure JSON format
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -512,18 +557,15 @@ def add_project():
             conn.close()
     return jsonify({"error": "Failed to connect to the database."}), 500
 #deleting of projects
-@app.route('/delete_project', methods=['DELETE'])
+@app.route('/delete_project/<id>', methods=['DELETE'])
 @token_required
-def delete_project():
-    data=request.json()
-    id=data.get('project_id')
-    roll_id=data.get('roll_id')
-    print(data)
+def delete_project(id):
+    
     conn = connect_to_db()
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute('DELETE FROM project_new WHERE project_id = ? and roll_id = ?', (id,roll_id,))
+            cursor.execute('DELETE FROM project_new WHERE project_id = ?', (id,))
             conn.commit()
             if cursor.rowcount > 0:
                 return jsonify({"message": f"Project deleted successfully!"}), 200
@@ -649,15 +691,22 @@ def list_projects():
 @token_required
 def projects_published():
     data = request.json
-    print(data)
+    print(data[1])
     conn = connect_to_db()
     if conn:
         try:
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM project_new where status=? and done_review=? and publish=? and department=?',(1,'TRUE','TRUE',data,))
+            cursor.execute('SELECT * FROM project_new where status=? and done_review=? and publish=? and department=?',(1,'TRUE','TRUE',data[0],))
             projects = cursor.fetchall()
-            print(projects)
-            return jsonify(projects), 200
+            cursor.execute('Select * from faculty_projects where roll_id=?',(data[1],))
+            student_project=cursor.fetchall()
+            if student_project:
+                
+                cursor.execute('Select * from project_new where project_id=?',(student_project[0][1],))
+                student_project=cursor.fetchall()
+            else:
+                student_project=[[]]
+            return jsonify(projects,student_project[0]), 200
         except sqlite3.Error as e:
             print(str(e))
             return jsonify({"error": str(e)}), 500
@@ -668,6 +717,7 @@ def projects_published():
 @app.route('/project/<roll_id>', methods=['GET'])
 @token_required
 def project(roll_id):
+    print(roll_id)
     conn = connect_to_db()
     
     if conn:
@@ -675,92 +725,201 @@ def project(roll_id):
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM project_new WHERE roll_id = ?', (roll_id,))
             projects = cursor.fetchall()
-            
-            if projects:
-                # Convert list of tuples to list of dictionaries
-                print("issue",projects)
-                result = [
-                    {
-                        "Project_id": project[0],
-                        "title": project[2],
-                        "abstract": project[3],
-                        "requirements": project[5],
-                        
-                        "domain":project[6],
-                        "department":project[7],
-                        "done_review":project[8],
+            cursor.execute('SELECT * FROM faculty_projects where faculty_id=?',(roll_id,))
+            students=cursor.fetchall()
+            print(students)
 
-                        "status":project[9],
-                        "publish":project[10],
-                        "under_review":project[11]
+            # Create a dictionary to hold student details by Project_id
+            student_dict = {}
+
+            # Extract student IDs from students list
+            student_ids = [student[2] for student in students]  # student_id is at index 3
+            print(student_ids)
+            # Fetch student details from students_new table
+            if student_ids:
+                print("Student IDs:", student_ids)  # Debugging
+                
+                placeholders = ",".join(["?"] * len(student_ids))  # Correct placeholders
+                query = f"SELECT id, name, email FROM students_users WHERE role=? AND id IN ({placeholders})"
+                
+                print("Generated SQL Query:", query)  # Debugging
+                print("Query Parameters:", ("student", *student_ids))  # Debugging
+                
+                cursor.execute(query, ("student", *student_ids))  # Execute query
+                
+                rows = cursor.fetchall()  # Store fetched results in a variable
+                print(rows)
+                for row in rows:  # Iterate over the fetched results
+                    print("Each row:", row)
+
+                student_details = {row[0]: {"name": row[1], "email": row[2]} for row in rows}  # Use stored rows
+
+                print("Final Student Details:", student_details)
+
+            # Debug if users_new table has data
+            cursor.execute("SELECT * FROM users_new LIMIT 5")
+            print("Sample users_new Data:", cursor.fetchall())
+
+            # Populate student_dict with project-wise student details
+            for student in students:
+                project_id = student[1]  # Project_id is at index 2
+                student_id = student[2]  # student_id is at index 3
+                
+                if student_id in student_details:
+                    student_info = {
+                        "student_id": student_id,
+                        "name": student_details[student_id]["name"],
+                        "email": student_details[student_id]["email"]
                     }
-                    for project in projects
-                ]
-                return jsonify(result), 200
+                    if project_id in student_dict:
+                        student_dict[project_id].append(student_info)
+                    else:
+                        student_dict[project_id] = [student_info]
 
-            else: 
-                return jsonify({"error": "Project not found."}), 404
+            # Convert projects list into list of dictionaries
+            result = [
+                {
+                    "Project_id": project[0],
+                    "title": project[2],
+                    "abstract": project[3],
+                    "requirements": project[5],
+                    "domain": project[6],
+                    "department": project[7],
+                    "done_review": project[8],
+                    "status": project[9],
+                    "publish": project[10],
+                    "under_review": project[11],
+                    "students": student_dict.get(project[0], [])  # Attach students if available
+                }
+                for project in projects
+            ]
+
+            # Close DB connection
+            
+
+            # print("i want this",result)
+
+            # if projects:
+            #     # Convert list of tuples to list of dictionaries
+            #     print("issue",projects)
+            #     result = [
+            #         {
+            #             "Project_id": project[0],
+            #             "title": project[2],
+            #             "abstract": project[3],
+            #             "requirements": project[5],
+                        
+            #             "domain":project[6],
+            #             "department":project[7],
+            #             "done_review":project[8],
+
+            #             "status":project[9],
+            #             "publish":project[10],
+            #             "under_review":project[11]
+            #         }
+            #         for project in projects
+            #     ]
+            return jsonify(result), 200
+
+            
+            return jsonify({"error": "Project not found."}), 404
         except sqlite3.Error as e:
             return jsonify({"error": str(e)}), 500
         finally:
             conn.close()
     # return jsonify({"error": "Failed to connect to the database."}), 500
-@app.route('/filter', methods=['POST'])
-def get_data():
-    request_data = request.get_json()
-    query = request_data.get('query', {})
-    Type = query.get('Type', None)
-    Department = query.get('Department', None)
-    Year = query.get('Year', None)
-    print(query)
-    print(type(Year))
-    # if len(Year)>0:
-    #     Year = int(Year)
+# @app.route('/filter', methods=['POST'])
+# def get_data():
+#     request_data = request.get_json()
+#     query = request_data.get('query', {})
+#     Type = query.get('Type', None)
+#     Department = query.get('Department', None)
+#     Year = query.get('Year', None)
+#     print(query)
+#     print(type(Year))
+#     # if len(Year)>0:
+#     #     Year = int(Year)
 
-    # data1 = df.copy()  # Use a copy to avoid modifying the original DataFrame
+#     # data1 = df.copy()  # Use a copy to avoid modifying the original DataFrame
     
-    # # Apply filters
-    # if len(Year)>0:
-    #     Year = int(Year)
-    #     data1 = [project for project in data if project.get('Year') == Year]
-    #     if len(Department)>0:
-    #         data1 = [project for project in data1 if project.get('Department') == Department]
-    #         if len(Type)>0:
-    #             data1 = [project for project in data1 if project.get('Project_Type') == Type]
+#     # # Apply filters
+#     # if len(Year)>0:
+#     #     Year = int(Year)
+#     #     data1 = [project for project in data if project.get('Year') == Year]
+#     #     if len(Department)>0:
+#     #         data1 = [project for project in data1 if project.get('Department') == Department]
+#     #         if len(Type)>0:
+#     #             data1 = [project for project in data1 if project.get('Project_Type') == Type]
         
 
-    # return jsonify(data1)
-    query = request_data.get('query', {})
-    Type = query.get('Type', None)
-    Department = query.get('Department', None)
-    Year = query.get('Year', None)
+#     # return jsonify(data1)
+#     query = request_data.get('query', {})
+#     Type = query.get('Type', None)
+#     Department = query.get('Department', None)
+#     Year = query.get('Year', None)
     
-    # Print Year for debugging
-    print("Received Year:", Year)
+#     # Print Year for debugging
+#     print("Received Year:", Year)
 
-    # Initialize data1 with a copy of df
-    data1 = df.copy()  # Use a copy to avoid modifying the original DataFrame
+#     # Initialize data1 with a copy of df
+#     data1 = df.copy()  # Use a copy to avoid modifying the original DataFrame
 
-    # Apply filters
-    if Year:
-        try:
-            Year = int(Year)  # Convert Year to integer if it's not None or empty
-            data1 = data1[data1['Year'] == Year]
-            print(data1)
-        except ValueError:
-            return jsonify({"error": "Invalid Year format"}), 400
+#     # Apply filters
+#     if Year:
+#         try:
+#             Year = int(Year)  # Convert Year to integer if it's not None or empty
+#             data1 = data1[data1['Year'] == Year]
+#             print(data1)
+#         except ValueError:
+#             return jsonify({"error": "Invalid Year format"}), 400
 
-    if Department:
-        data1 = data1[data1['Department'] == Department]
+#     if Department:
+#         data1 = data1[data1['Department'] == Department]
 
-    if Type:
-        data1 = data1[data1['Project_Type'] == Type]
-    print(data1)
+#     if Type:
+#         data1 = data1[data1['Project_Type'] == Type]
+#     print(data1)
+#     # Convert the filtered DataFrame to a list of dictionaries for JSON response
+#     result = data1.to_dict(orient='records')
+#     print(result)
+
+#     return jsonify(result)
+@app.route('/filter',methods=['POST'])
+def get_data():
+    if request.method == 'POST':
+        request_data = request.get_json()
+        query = request_data.get('query', '')
+        print(query)
+        Type = query.get('Type', None)
+        Department = query.get('Department', None)
+        Year = query.get('Year', None)     
+        # Print the parameters for debugging
+        print("Year:", Year)
+        print("Department:", Department)
+        print("Type:", Type)
+
+        # Start filtering
+        data1 = df.copy()  # Use a copy to avoid modifying the original DataFrame
+        print(data1)
+
+        # Filter by Year if provided
+        if Year:
+            try:
+                Year = int(Year)  # Convert Year to integer if it's not None or empty
+                data1 = data1[data1['Year'] == Year]
+            except ValueError:
+                return jsonify({"error": "Invalid Year format"}), 400
+
+        if Department:
+            data1 = data1[data1['Department'] == Department]
+
+        if Type:
+            data1 = data1[data1['Project_Type'] == Type]
+
     # Convert the filtered DataFrame to a list of dictionaries for JSON response
-    result = data1.to_dict(orient='records')
-    print(result)
+        result = data1.to_dict(orient='records')
 
-    return jsonify(result)
+        return jsonify(result)
 
 
 #mail for prc team for altering them on new projects that must be reviewed
@@ -1263,6 +1422,7 @@ def registerPrc():
 @token_required
 def get_review(project_id):
     # SQL query to get project and its reviews
+    print(project_id,"why not coming......")
     project_query = '''
         SELECT *
         FROM project_new
@@ -1319,28 +1479,32 @@ def add_student_to_project():
     print(data)
     if not data:
         return jsonify({"error": "No JSON data provided."}), 400
-
-    faculty_id = data.get('faculty_id')
-    project_id = data.get('project_id')
-    student_id = data.get('student_id')
+    
+    faculty_id = data.get('facultyId')
+    project_id = data.get('projectId')
+    student_id = data.get('studentId')
     
     if not faculty_id or not project_id or not student_id:
         return jsonify({"error": "faculty_id, project_id, and student_id are required."}), 400
-
+    
     conn = connect_to_db()
     if conn:
         try:
             cursor = conn.cursor()
             
             # Count the current number of students for the project
-            cursor.execute('SELECT COUNT(*) FROM faculty_projects WHERE project_id = ?', (project_id,))
+            cursor.execute('SELECT COUNT(*) FROM faculty_projects WHERE roll_id = ?', (student_id,))
             student_count = cursor.fetchone()[0]
-
+            
+            
+            print(student_count)
+            if student_count>=1:
+                return jsonify({"error": "You ALready Have Project"}), 203
             if student_count >= 5:
                 return jsonify({"error": "Maximum of 5 students allowed for this project."}), 400
-            
+            print(type(student_id))
             # Insert into faculty_projects
-            cursor.execute('INSERT INTO faculty_projects (faculty_id, project_id, student_id) VALUES (?, ?, ?)',
+            cursor.execute('INSERT INTO faculty_projects (faculty_id, project_id,roll_id) VALUES (?, ?, ?)',
                            (faculty_id, project_id, student_id))
             conn.commit()
             return jsonify({"message": "Student added to project successfully!"}), 201
@@ -1379,6 +1543,7 @@ def get_students_for_project(faculty_id, project_id):
 @app.route('/faculty/<faculty_id>/project/<project_id>/student/<student_id>', methods=['DELETE'])
 def delete_student_from_project(faculty_id, project_id, student_id):
     conn = connect_to_db()
+    print(faculty_id, project_id, student_id)
     if conn:
         try:
             cursor = conn.cursor()
@@ -1386,7 +1551,7 @@ def delete_student_from_project(faculty_id, project_id, student_id):
             # Check if the student is associated with the project before deleting
             cursor.execute('''
                 SELECT * FROM faculty_projects
-                WHERE faculty_id = ? AND project_id = ? AND student_id = ?;
+                WHERE faculty_id = ? AND project_id = ? AND roll_id = ?;
             ''', (faculty_id, project_id, student_id))
             record = cursor.fetchone()
             
@@ -1394,7 +1559,7 @@ def delete_student_from_project(faculty_id, project_id, student_id):
                 # Proceed to delete the student from the project
                 cursor.execute('''
                     DELETE FROM faculty_projects
-                    WHERE faculty_id = ? AND project_id = ? AND student_id = ?;
+                    WHERE faculty_id = ? AND project_id = ? AND roll_id = ?;
                 ''', (faculty_id, project_id, student_id))
                 conn.commit()
                 
@@ -1417,4 +1582,67 @@ def start():
 if __name__ == '__main__':
     create_tables()  # Ensure the tables exist
     app.run(host='0.0.0.0', port=6102, debug=True)
+    
+# CREATE TABLE faculty_projects (
+#     faculty_id TEXT,
+#     project_id INTEGER,
+#     roll_id TEXT,
+#     PRIMARY KEY (faculty_id, project_id, roll_id)
+# );
+
+# CREATE TABLE students (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     project_id INTEGER NOT NULL,
+#     student_id INTEGER NOT NULL,
+#     name TEXT NOT NULL,
+#     email TEXT NOT NULL,
+#     FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
+# );
+# CREATE TABLE users_new (        
+#                     roll_id TEXT PRIMARY KEY,         
+#                     name TEXT NOT NULL,
+#                     password TEXT NOT NULL,
+#                     role TEXT NOT NULL,
+#                     department TEXT NOT NULL,
+#                     email TEXT NOT NULL
+#                 );
+# CREATE TABLE PRC(Dep_ID INTEGER primary key, Department TEXT not null unique,password TEXT not null);
+# CREATE TABLE project_new (
+#     project_id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     roll_id text NOT NULL,
+#     title TEXT,
+#     abstract TEXT,
+#     staff_name TEXT,
+#     requirements TEXT,
+#     domain TEXT,
+#     department TEXT,
+#     done_review BOOLEAN DEFAULT FALSE,
+#     status BOOLEAN DEFAULT TRUE,
+#     publish BOOLEAN DEFAULT FALSE, under_review BOOLEAN default false,
+#     FOREIGN KEY (roll_id) REFERENCES users_new(roll_id)
+# );
+# CREATE TABLE ProjectReview (
+#                         project_id INTEGER ,
+#                         department TEXT,
+#                         review_id TEXT,
+#                         reviews TEXT NOT NULL,
+#                         rating INTEGER,
+#                         faculty_name TEXT NOT NULL,
+#                         PRIMARY KEY (project_id, department, review_id),
+#                         FOREIGN KEY (project_id) REFERENCES project_new(project_id),
+#                         FOREIGN KEY (department) REFERENCES PRC(department)
+# );
+# CREATE TABLE students_users (
+#     id TEXT PRIMARY KEY,
+#     name TEXT NOT NULL,
+#     email TEXT NOT NULL UNIQUE,
+#     password TEXT NOT NULL,
+#     role TEXT NOT NULL,
+#     department TEXT
+# );
+# CREATE TABLE page_views (
+#     page_name TEXT PRIMARY KEY,    -- Name of the page
+#     view_count INTEGER DEFAULT 0,  -- Number of views for the page
+#     last_viewed DATETIME DEFAULT CURRENT_TIMESTAMP  -- Timestamp of the last recorded view
+# );
 

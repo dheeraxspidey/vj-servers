@@ -32,7 +32,7 @@ function SV1() {
     },
   ]);
 
-  const API_BASE_URL = "http://localhost:5000"; // Backend server URL
+  const API_BASE_URL = "http://localhost:6102"; // Backend server URL
 
   const fetchPublishedProjects = async () => {
     try {

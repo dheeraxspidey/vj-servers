@@ -132,6 +132,7 @@ Server2 : 10.45.8.187
 | SSO (Eduprime)  | N/A               |  5001  ✅      | MongoDB        |       N/a         |
 | Campus          | 3000  ✅          |  5000  ✅        | PostgreSQL     |       campus      |
 | BusTracker      | 3100              |  3102          | MySQL          |       bus         |
+| DPD             | 3104              |  6040          | MySQL          |       bus         |
 | UnDoubt         | 3108              |  6040          | Cloud          |       undoubt     |
 | Wall            | 3105  ✅          |  N/A           | N/A            |       wall        |
 | Navi            | 3107  ✅          |  N/A           | N/A            |       navi        |
