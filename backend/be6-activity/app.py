@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template_string, send_from_directory
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta
 from flask_cors import CORS
@@ -17,6 +17,12 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 import subprocess
 import json
 import tempfile
+import secrets
+import threading
+import time
+from werkzeug.utils import secure_filename
+import base64
+import uuid
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -26,14 +32,14 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = Flask(__name__)
-# Allow requests from both localhost and the public domain
-CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3106", "http://activity.vnrzone.site"]}})
+
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3106"}})
 bcrypt = Bcrypt(app)  # Initialize Flask-Bcrypt
 
 # MongoDB Configuration
 app.config['MONGODB_SETTINGS'] = {
     'host': os.getenv('MONGODB_URI'),
-    'db': 'activity_tracker'
+    'db': 'activity_logger'
 }
 
 # Initialize MongoDB
@@ -43,19 +49,21 @@ db = MongoEngine(app)
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 model = genai.GenerativeModel('gemini-1.5-pro')
 
+# Add this after app initialization
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-secret-key-here')
+
 class Activity(db.EmbeddedDocument):
+    activity_id = db.StringField(required=True, default=lambda: str(uuid.uuid4()))
     title = db.StringField(required=True)
     activity_type = db.StringField(required=True)  # For compatibility with existing code
-    type = db.StringField(choices=['project', 'certification', 'job', 'education'])  # For new features
+    
     description = db.StringField()
     date = db.DateTimeField(default=datetime.utcnow)
     status = db.StringField(default='ongoing')
     source = db.StringField(choices=['manual', 'github', 'leetcode'])
-    leetcode_rating = db.IntField()
+   
     skills = db.ListField(db.StringField())
-    metadata = db.DictField()
-    url = db.StringField()
-
+  
 class Education(db.EmbeddedDocument):
     school = db.StringField(required=True)
     degree = db.StringField(required=True)
@@ -73,9 +81,16 @@ class Experience(db.EmbeddedDocument):
     current = db.BooleanField(default=False)
     description = db.StringField()
 
+class DailyActivity(db.EmbeddedDocument):
+    daily_activity_id = db.StringField(required=True, default=lambda: str(uuid.uuid4()))
+    title = db.StringField(required=True)
+    description = db.StringField()
+    date = db.DateTimeField(default=datetime.utcnow)
+    skills = db.ListField(db.StringField())
+
 class User(db.Document):
     meta = {
-        'collection': 'users',
+        'collection': 'activity_users',
         'indexes': [
             {'fields': ['email'], 'unique': True},
             {'fields': ['username'], 'unique': True}
@@ -102,6 +117,13 @@ class User(db.Document):
     github_token = db.StringField()
     leetcode_username = db.StringField()
 
+    # Add daily_activities field
+    daily_activities = db.ListField(db.EmbeddedDocumentField(DailyActivity), default=list)
+
+    # Add profile image field
+    profile_image = db.StringField(default='')
+    profile_image_name = db.StringField(default='')
+
 class Resume(db.Document):
     user = db.ReferenceField(User, required=True)
     template_id = db.IntField(required=True)
@@ -115,6 +137,57 @@ class Resume(db.Document):
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
 jwt = JWTManager(app)
+
+# Add cleanup mechanism for resume data store
+class ResumeDataStore:
+    def __init__(self):
+        self.store = {}
+        self.lock = threading.Lock()
+        self.cleanup_interval = 3600  # 1 hour
+        self.data_expiry = 3600  # 1 hour
+        self.max_entries = 1000
+        self._start_cleanup_thread()
+
+    def _start_cleanup_thread(self):
+        def cleanup():
+            while True:
+                self._cleanup_expired()
+                time.sleep(self.cleanup_interval)
+        
+        thread = threading.Thread(target=cleanup, daemon=True)
+        thread.start()
+
+    def _cleanup_expired(self):
+        with self.lock:
+            now = datetime.utcnow()
+            expired = [
+                k for k, v in self.store.items()
+                if (now - v['timestamp']).total_seconds() > self.data_expiry
+            ]
+            for key in expired:
+                del self.store[key]
+
+    def add(self, data):
+        with self.lock:
+            if len(self.store) >= self.max_entries:
+                oldest = min(self.store.items(), key=lambda x: x[1]['timestamp'])
+                del self.store[oldest[0]]
+            
+            resume_id = secrets.token_urlsafe(16)
+            self.store[resume_id] = {
+                'data': data,
+                'timestamp': datetime.utcnow()
+            }
+            return resume_id
+
+    def get(self, resume_id):
+        with self.lock:
+            if resume_id in self.store:
+                return self.store[resume_id]['data']
+            return None
+
+# Replace global resume_data_store with instance
+resume_data_store = ResumeDataStore()
 
 @app.route('/api/auth/signup', methods=['POST'])
 def signup():
@@ -211,7 +284,7 @@ def add_activity():
             description=data['description'],
             date=datetime.utcnow(), # Default to current time, or get from request if needed
             status=data.get('status', 'ongoing'),
-            leetcode_rating=data.get('leetcode_rating'), # Get LeetCode rating from request
+         
             skills=data.get('skills', [])  # Add skills with empty list as default
         )
 
@@ -241,30 +314,61 @@ def add_activity():
 
 # Get user's activities
 @app.route('/api/activities', methods=['GET'])
-@jwt_required() # Protect this route as well
+@jwt_required()
 def get_user_activities():
     try:
-        user_id = get_jwt_identity() # Get user ID from JWT token
-        user = User.objects(id=user_id).first() # Find user by ID from JWT
+        user_id = get_jwt_identity()
+        user = User.objects(id=user_id).first()
+        
         if not user:
             return jsonify({'error': 'User not found'}), 404
-   
-        # Convert activities to JSON with skills included
-        activities_list = [{
-            'title': activity.title,
-            'activity_type': activity.activity_type,
-            'description': activity.description,
-            'status': activity.status,
-            'date': activity.date,
-            'leetcode_rating': activity.leetcode_rating,
-            'skills': activity.skills  # Include skills in response
-        } for activity in user.activities]
-        
-        return jsonify(activities_list), 200
+
+        activities = []
+        for activity in user.activities:
+            activity_data = {
+                'activity_id': str(activity.activity_id),
+                'title': activity.title,
+                'description': activity.description,
+                'date': activity.date.isoformat() if activity.date else None,
+                'status': activity.status,
+                
+                'skills': activity.skills,
+                'activity_type': activity.activity_type
+            }
+            activities.append(activity_data)
+
+        return jsonify(activities[::-1]), 200
 
     except Exception as e:
-        logger.error(f"Error getting activities: {str(e)}")
-        return jsonify({'error': 'Server error', 'details': str(e)}), 500
+        logger.error(f"Error fetching activities: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+# Get user's daily activities
+@app.route('/api/daily_activities', methods=['GET'])
+@jwt_required()
+def get_user_daily_activities():
+    try:
+        user_id = get_jwt_identity()
+        user = User.objects(id=user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        daily_activities = []
+        for daily_activity in user.daily_activities:
+            daily_activity_data = {
+                'daily_activity_id': str(daily_activity.daily_activity_id),
+                'title': daily_activity.title,
+                'description': daily_activity.description,
+                'date': daily_activity.date.isoformat() if daily_activity.date else None,
+                'skills': daily_activity.skills
+            }
+            daily_activities.append(daily_activity_data)
+
+        return jsonify(daily_activities[::-1]), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching in daily activities: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
 
 @app.route('/api/update_leetcode_data', methods=['POST'])
 @jwt_required()
@@ -584,6 +688,7 @@ def get_profile():
             'github': user.github,
             'linkedin': user.linkedin,
             'skills': user.skills,
+            'profile_image': user.profile_image,
             'education': [{
                 'school': edu.school,
                 'degree': edu.degree,
@@ -672,6 +777,13 @@ def update_profile():
                 )
                 user.experience.append(experience)
 
+        # Check if a new profile image is provided
+        if 'profile_image' in request.files:
+            # Call the upload_profile_image function
+            image_response = upload_profile_image()
+            if image_response.status_code != 200:
+                return image_response
+
         user.save()
         return jsonify({'message': 'Profile updated successfully'}), 200
         
@@ -754,7 +866,8 @@ Strict Guidelines:
    - Maintain all technology mentions and tool references
 7. Ensure proper JSON escaping for special characters
 8. Validate the final JSON structure
-
+9. make the initial letter of titles of the activities in caps.
+10.rephrase the description of the activities ,summary in a way that is more engaging and interesting.
 The response must contain only the JSON object - no additional text or explanations.
 """
 
@@ -881,7 +994,7 @@ def generate_resume():
             'skills': user.skills,
             'activities': [{
                 'title': act.title,
-                'type': act.type,
+                'activity_type': act.activity_type,
                 'description': act.description,
                 'date': act.date.isoformat() if act.date else None,
                 'skills': act.skills
@@ -891,13 +1004,25 @@ def generate_resume():
         # Generate resume content using Gemini
         generated_resume = generate_resume_content(resume_data)
 
-        # Update resume with generated content
-        resume.generated_content = generated_resume
-        resume.save()
+        # Parse the generated content
+        try:
+            resume_json = json.loads(generated_resume)
+            
+            # Add profile image to resume data if it exists
+            # We add this after Gemini generation to avoid sending the image data to the model
+            if user.profile_image:
+                resume_json['profile_image'] = user.profile_image
+
+            # Update resume with generated content
+            resume.generated_content = json.dumps(resume_json)
+            resume.save()
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON generated: {str(e)}")
+            return jsonify({'error': 'Failed to generate valid resume content'}), 500
 
         try:
             # Generate PDF using resume-cli
-            pdf_path = process_resume_with_cli(generated_resume, str(resume.id))
+            pdf_path = process_resume_with_cli(resume.generated_content, str(resume.id))
             resume.pdf_url = f'/api/resume/{str(resume.id)}/download'
             resume.save()
         except Exception as e:
@@ -908,7 +1033,7 @@ def generate_resume():
             'message': 'Resume generated successfully',
             'resume_id': str(resume.id),
             'resume_data': resume_data,
-            'generated_content': generated_resume,
+            'generated_content': resume.generated_content,
             'pdf_url': resume.pdf_url if resume.pdf_url else None
         }), 201
 
@@ -970,17 +1095,356 @@ def download_resume(resume_id):
     except Exception as e:
         logger.error(f"Error downloading resume: {str(e)}")
         return jsonify({'error': 'Failed to generate PDF resume'}), 500
+
+@app.route('/api/add_daily_activity', methods=['POST'])
+@jwt_required()
+def add_daily_activity():
+    try:
+        data = request.get_json()
+        user_id = get_jwt_identity()
+
+        # Validate required fields
+        required_fields = ['title', 'description']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+
+        # Create new DailyActivity document
+        new_activity = DailyActivity(
+            title=data['title'],
+            description=data['description'],
+            skills=data.get('skills', [])
+        )
+
+        # Find the user and append the new daily activity
+        user = User.objects(id=user_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        user.daily_activities.append(new_activity)
+        user.save()
+
+        return jsonify({
+            'message': 'Daily activity added successfully',
+            'activity': {
+                'title': new_activity.title,
+                'description': new_activity.description,
+                'skills': new_activity.skills,
+                'date': new_activity.date
+            }
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error adding daily activity: {str(e)}")
+        return jsonify({'error': 'Server error', 'details': str(e)}), 500
+
+@app.route('/api/user/profile_image', methods=['POST'])
+@jwt_required()
+def upload_profile_image():
+    try:
+        print("shakalakaboomboom")
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            
+            # Read the file and convert it to base64
+            file_data = file.read()
+            encoded_image = base64.b64encode(file_data).decode('utf-8')
+            
+            # Get the user ID from the JWT token
+            user_id = get_jwt_identity()
+            
+            # Retrieve the user from the database
+            user = User.objects.get(id=user_id)
+            
+            # Update user's profile image in the database
+            user.profile_image = encoded_image
+            user.profile_image_name = filename
+            user.save()
+            
+            logger.info(f"User profile image updated successfully")
+            
+            return jsonify({'message': 'Profile image uploaded successfully', 'filename': filename, 'base64_image': encoded_image}), 200
+        else:
+            return jsonify({'error': 'File type not allowed'}), 400
+    except Exception as e:
+        logger.error(f"Error uploading profile image: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/profile_image', methods=['DELETE'])
+@jwt_required()
+def delete_profile_image():
+    try:
+        user = User.objects.get(id=current_user.id)
+        if user.profile_image:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.profile_image)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            
+            user.profile_image = ''
+            user.save()
+            
+        return jsonify({'message': 'Profile image deleted successfully'}), 200
+    except Exception as e:
+        logger.error(f"Error deleting profile image: {str(e)}")
+        return jsonify({'error': 'Failed to delete profile image'}), 500
+    finally:
+        # This block is optional but recommended for cleanup
+        pass
+
+# Configuration should be AFTER the route definitions
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
 @app.after_request
 def add_cors_headers(response):
-    allowed_origins = ['http://localhost:3106', 'http://activity.vnrzone.site']
-    
-    print (request.headers.get('Origin'))
-    if request.headers.get('Origin') in allowed_origins:
-        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin')
-
+    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3106'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
+@app.route('/api/activities/<activity_id>', methods=['PUT'])
+@jwt_required()
+def update_activity(activity_id):
+    try:
+        user_id = get_jwt_identity()
+        user = User.objects(id=user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        data = request.get_json()
+        
+        # Find the activity index using activity_id
+        activity_index = next(
+            (i for i, a in enumerate(user.activities) if a.activity_id == activity_id),
+            None
+        )
+        
+        if activity_index is None:
+            return jsonify({'error': 'Activity not found'}), 404
+
+        # Handle empty skills array
+        if 'skills' in data and not data['skills']:
+            data['skills'] = []
+
+        # Update allowed fields
+        allowed_fields = ['title', 'description', 'status', 'leetcode_rating', 'skills']
+        for field in allowed_fields:
+            if field in data:
+                setattr(user.activities[activity_index], field, data[field])
+
+        user.save()
+        
+        return jsonify({
+            'message': 'Activity updated successfully',
+            'activity': user.activities[activity_index].to_json()
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error updating activity: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+# ... existing code ...
+
+@app.route('/api/user/profile/image', methods=['GET'])
+@jwt_required()
+def get_user_profile_image():
+    try:
+        user_id = get_jwt_identity()
+        
+        # Get user from database
+        user = User.objects(id=user_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Get profile image from user
+        if not user.profile_image:
+            return jsonify({'error': 'No profile image found'}), 404
+            
+        # Return the profile image
+        return user.profile_image, 200, {'Content-Type': 'image/jpeg'}
+        
+    except Exception as e:
+        print(f"Error fetching profile image: {str(e)}")
+        return jsonify({'error': 'Failed to fetch profile image'}), 500
+
+# ... existing code ...
+@app.route('/api/activities/<activity_id>', methods=['DELETE'])
+@jwt_required()
+def delete_activity(activity_id):
+    try:
+        user_id = get_jwt_identity()
+        user = User.objects(id=user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Find the activity index using activity_id
+        activity_index = next(
+            (i for i, a in enumerate(user.activities) if a.activity_id == activity_id),
+            None
+        )
+        
+        if activity_index is None:
+            return jsonify({'error': 'Activity not found'}), 404
+
+        # Remove the activity from the list
+        user.activities.pop(activity_index)
+        user.save()
+        
+        return jsonify({
+            'message': 'Activity deleted successfully'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error deleting activity: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+# ... existing code for deleting daily_activities ...
+@app.route('/api/daily_activities/<daily_activity_id>', methods=['DELETE'])
+@jwt_required()
+def delete_daily_activity(daily_activity_id):
+    try:
+        user_id = get_jwt_identity()
+        user = User.objects(id=user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Find the activity index using activity_id
+        daily_activity_index = next(
+            (i for i, a in enumerate(user.daily_activities) if a.daily_activity_id == daily_activity_id),
+            None
+        )
+        
+        if daily_activity_index is None:
+            return jsonify({'error': 'Daily Activity not found'}), 404
+
+        # Remove the activity from the list
+        user.daily_activities.pop(daily_activity_index)
+        user.save()
+        
+        return jsonify({
+            'message': 'Daily activity deleted successfully'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error deleting daily activity: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
+@app.route('/api/activities/recommend', methods=['POST'])
+@jwt_required()
+def recommend_activities():
+    try:
+        user_id = get_jwt_identity()
+        user = User.objects(id=user_id).first()
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Get job title from request
+        data = request.get_json()
+        job_title = data.get('job_title')
+        
+        if not job_title:
+            return jsonify({'error': 'Job title is required'}), 400
+            
+        # Get all user activities
+        activities = user.activities
+        
+        if not activities:
+            return jsonify({'error': 'No activities found for user'}), 404
+            
+        # Format activities for Gemini
+        activities_data = []
+        for activity in activities:
+            activity_data = {
+                'activity_id': activity.activity_id,
+                'title': activity.title,
+                'activity_type': getattr(activity, 'activity_type', 'general'),
+                'description': getattr(activity, 'description', ''),
+                'skills': getattr(activity, 'skills', [])
+            }
+            activities_data.append(activity_data)
+            
+        # Create prompt for Gemini - asking for titles instead of IDs
+        prompt = f"""
+        You are a career advisor helping to build a tailored resume for a {job_title} position.
+        
+        I'll provide a list of activities with their IDs, titles, descriptions, and associated skills.
+        
+        Your task is to analyze these activities and select the ones that are most relevant for a {job_title} position.
+        
+        Return ONLY a JSON array of activity titles (not IDs), with no additional text. The JSON should look like this:
+        ["Activity Title 1", "Activity Title 2", "Activity Title 3"]
+        
+        Here are the activities:
+        {json.dumps(activities_data, indent=2)}
+        
+        Select the most relevant activities (maximum 5) for a {job_title} position.
+        """
+        
+        # Call Gemini API
+        safety_settings = {
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE
+        }
+        
+        generation_config = {
+            "temperature": 0.2,
+            "top_p": 0.8,
+            "top_k": 40,
+            "max_output_tokens": 1024,
+        }
+        
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config,
+            safety_settings=safety_settings
+        )
+        
+        # Parse the response to get activity titles
+        try:
+            response_text = response.text
+            # Try to parse as JSON
+            recommended_activities = json.loads(response_text)
+            
+            # Verify the response is a list of strings
+            if not isinstance(recommended_activities, list):
+                return jsonify({'error': 'Invalid response format from AI'}), 500
+                
+            for activity_title in recommended_activities:
+                if not isinstance(activity_title, str):
+                    return jsonify({'error': 'Invalid activity title format from AI'}), 500
+                    
+            # Verify that all activity titles exist in the user's activities
+            valid_activity_titles = [activity.title for activity in activities]
+            recommended_activities = [title for title in recommended_activities if title in valid_activity_titles]
+            print(recommended_activities)
+            return jsonify({
+                'recommended_activities': recommended_activities
+            }), 200
+            
+        except json.JSONDecodeError:
+            # If response is not valid JSON, return error
+            return jsonify({'error': 'AI response could not be parsed as JSON'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error recommending activities: {str(e)}")
+        return jsonify({'error': 'Server error'}), 500
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=6030, debug=True) 
+    app.run(host='0.0.0.0', port=6106, debug=True) 
