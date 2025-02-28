@@ -33,7 +33,11 @@ load_dotenv()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3106"}})
+# Enable CORS globally
+# Enable CORS globally for specific origins
+# CORS(app, origins=["http://localhost:3106", "https://activity.vnrzone.site"], supports_credentials=True)
+CORS(app, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": "https://activity.vnrzone.site"}})
 bcrypt = Bcrypt(app)  # Initialize Flask-Bcrypt
 
 # MongoDB Configuration
@@ -1208,12 +1212,16 @@ def allowed_file(filename):
 
 @app.after_request
 def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3106'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
-    return response
+    allowed_origins = {"http://localhost:3106", "https://activity.vnrzone.site"}
+    origin = request.headers.get("Origin")
 
+    if origin in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, PUT, POST, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+
+    return response
 @app.route('/api/activities/<activity_id>', methods=['PUT'])
 @jwt_required()
 def update_activity(activity_id):

@@ -11,7 +11,6 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axiosConfig';
 const base_url = import.meta.env.VITE_API_BASE_URL;
 console.log('base_url:', base_url);
 const Login = () => {
@@ -134,7 +133,7 @@ const Login = () => {
             
             <Box sx={{ textAlign: 'center' }}>
               <Link href="/signup" variant="body2">
-                Don't have an account? Sign Up
+                Don't have an account? KP Sign Up
               </Link>
             </Box>
           </Box>

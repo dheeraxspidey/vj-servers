@@ -11,7 +11,7 @@ export default defineConfig({
         cors: true, // ✅ Enable CORS
         hmr: {
             protocol: 'ws',
-            host: 'localhost',
+            host: 'activity.vnrzone.site',
             port: 3106  // Changed from 3136 to match server port
         },
         allowedHosts: [

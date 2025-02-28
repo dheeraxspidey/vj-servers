@@ -8,3 +8,16 @@ const socket = io(SOCKET_SERVER_URL, {
 });
 
 export default socket;
+
+// import { io } from "socket.io-client";
+
+// const SOCKET_SERVER_URL = "https://undoubt.vnrzone.site/ud-be";  // Correct URL
+
+// const socket = io(SOCKET_SERVER_URL, {
+//   path: "/ud-be/socket.io/",  // Explicitly set path
+//   transports: ["websocket", "polling"], // Ensure WebSocket first
+//   withCredentials: true, // Enable credentials (if required)
+// });
+
+// export default socket;
+
