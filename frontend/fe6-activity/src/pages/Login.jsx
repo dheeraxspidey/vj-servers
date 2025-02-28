@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosConfig';
-const base_url= process.env.REACT_APP_BASE_URL;
+const base_url = import.meta.env.VITE_API_BASE_URL;
 console.log('base_url:', base_url);
 const Login = () => {
   const [formData, setFormData] = useState({

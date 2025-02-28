@@ -4,16 +4,18 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
     plugins: [react()],
     server: {
-        host: '0.0.0.0',
-        port: 3136,
+        host: 'localhost',
+        port: 3106,
         strictPort: true,
         open: true,
         cors: true, // ✅ Enable CORS
         hmr: {
-            clientPort: 3, // Fix HMR issues if running behind a proxy
+            protocol: 'ws',
+            host: 'localhost',
+            port: 3106  // Changed from 3136 to match server port
         },
         allowedHosts: [
-            'localhost',
+            'localhost:3106',
             'activity.vnrzone.site' // ✅ Allow this subdomain
         ],
     },
@@ -22,5 +24,8 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
-    }
+    },
+    define: {
+        global: 'window',
+    },
 });

@@ -13,7 +13,7 @@ import {
   ProfileImageContainer
 } from './styles';
 
-const base_url = process.env.REACT_APP_BASE_URL;
+const base_url = import.meta.env.VITE_API_BASE_URL;
 
 const SidebarTemplate = ({ resumeData }) => {
   const [userImage, setUserImage] = useState(null);
