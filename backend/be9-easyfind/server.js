@@ -18,9 +18,9 @@ app.use(cors());
 app.use(express.json());
 app.use(passport.initialize());
 
-// DB Connect
-const connectDB = require("./config/db");
-connectDB();
+// // DB Connect
+// const connectDB = require("./config/db");
+// connectDB();
 
 // Routes
 app.use("/auth", authRoutes);

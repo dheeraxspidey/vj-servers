@@ -2,7 +2,7 @@ const exp = require("express");
 const asyncHandler = require("express-async-handler");
 const dotenv = require("dotenv");
 const axios = require("axios");
-const authenticateUser = require("../Middleware/authMiddleware.js");
+const authenticateUser = require("../Middleware/authMiddleware.js.js");
 
 
 dotenv.config(); // Load environment variables

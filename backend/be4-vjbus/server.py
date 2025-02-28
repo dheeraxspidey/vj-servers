@@ -18,6 +18,38 @@ connected_routes = {}
 tracking_status = {}
 route_subscriptions = {}
 
+
+def init_db():
+    conn = sqlite3.connect("database.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room TEXT NOT NULL,
+            sender TEXT NOT NULL,
+            message TEXT NOT NULL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    conn.close()
+    conn = sqlite3.connect("database.db", check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS logs (
+            route_number TEXT, 
+            log_date date, 
+            log_time time
+        )
+    """)
+    conn.commit()
+    conn.close()
+    
+init_db()
+
+
+
+
 @app.route("/receive_location", methods=["POST"])
 def receive_location():
     data = request.json
@@ -67,10 +99,11 @@ def handle_tracking_status(data):
         socketio.emit("tracking_status", {"route_id": route_id, "status": status})
 
 def is_in_college(lon, lat):
-    COLLEGE = (17.5479048, 78.394546)
+    COLLEGE=(17.539873, 78.386514)
+    # COLLEGE = (17.5479048, 78.394546)
     print(COLLEGE)
     print(geodesic(COLLEGE, (lat, lon)).meters)
-    return geodesic(COLLEGE, (lat, lon)).meters <= 150
+    return geodesic(COLLEGE, (lat, lon)).meters <= 300
 
 def log_data(route_id):
     try:
@@ -109,22 +142,6 @@ def handle_location_update(data):
     print("called")
     return {"status": "received"}
 
-def init_db():
-    conn = sqlite3.connect("database.db", check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS chat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            room TEXT NOT NULL,
-            sender TEXT NOT NULL,
-            message TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-init_db()
 
 @socketio.on("join_room")
 def handle_join(data):
@@ -194,4 +211,4 @@ def handle_message(data):
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=6080, debug=True)
+    socketio.run(app, host="0.0.0.0", port=6104, debug=True)
