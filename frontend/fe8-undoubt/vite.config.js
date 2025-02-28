@@ -37,6 +37,11 @@ export default defineConfig({
       'localhost',
       'undoubt.vnrzone.site' // ✅ Allow this subdomain
     ],
+    hmr: {
+      protocol: 'wss',
+      host: 'undoubt.vnrzone.site/ud-be',
+      port: 3108  // Changed from 3136 to match server port
+    },
     proxy: {
       '/socket.io': {
         target: SOCKET_SERVER_URL, // ✅ Use environment variable for WebSockets
